@@ -1,4 +1,5 @@
 import random
+from typing import Tuple, Union
 
 import torch
 import torch.nn as nn
@@ -441,14 +442,24 @@ def _normalized_from_concentrations(
 class StainAugmentor(nn.Module):
     def __init__(
         self,
-        alpha_range: float = 0.2,
-        beta_range: float = 0.1,
-        alpha_stain_range: float = 0.3,
-        beta_stain_range: float = 0.2,
+        alpha_range: Union[float, Tuple[float, float]] = 0.2,
+        beta_range: Union[float, Tuple[float, float]] = 0.1,
+        alpha_stain_range: Union[float, Tuple[float, float]] = 0.3,
+        beta_stain_range: Union[float, Tuple[float, float]] = 0.2,
         he_ratio: float = 0.2,
         p: float = 0.5,
     ):
         super(StainAugmentor, self).__init__()
+
+        if isinstance(alpha_range, float):
+            alpha_range = (1 - alpha_range, 1 + alpha_range)
+        if isinstance(alpha_stain_range, float):
+            alpha_stain_range = (1 - alpha_stain_range, 1 + alpha_stain_range)
+        if isinstance(beta_range, float):
+            beta_range = (-beta_range, beta_range)
+        if isinstance(beta_stain_range, float):
+            beta_stain_range = (-beta_stain_range, beta_stain_range)
+
         self.alpha_range = alpha_range
         self.beta_range = beta_range
         self.alpha_stain_range = alpha_stain_range
@@ -458,30 +469,37 @@ class StainAugmentor(nn.Module):
 
     def get_params(self, n, dtype=None, device=None):
         return {
-            "alpha": self.alpha_range
-            * (torch.rand(n, 2, dtype=dtype, device=device) * 2 - 1)
-            + 1,
-            "beta": self.beta_range
-            * (2 * torch.rand(n, 2, dtype=dtype, device=device) - 1),
+            "alpha": (self.alpha_range[1] - self.alpha_range[0])
+            * torch.rand(n, 2, dtype=dtype, device=device)
+            + self.alpha_range[0],
+            "beta": (self.beta_range[1] - self.beta_range[0])
+            * torch.rand(n, 2, dtype=dtype, device=device)
+            + self.beta_range[0],
             "alpha_stain": torch.stack(
                 (
-                    self.alpha_stain_range
-                    * self.he_ratio
-                    * (torch.rand(n, 3, dtype=dtype, device=device) * 2 - 1)
-                    + 1,
-                    self.alpha_stain_range
-                    * (torch.rand(n, 3, dtype=dtype, device=device) * 2 - 1)
-                    + 1,
+                    self.he_ratio
+                    * (
+                        (self.alpha_stain_range[1] - self.alpha_stain_range[0])
+                        * torch.rand(n, 3, dtype=dtype, device=device)
+                        + self.alpha_stain_range[0]
+                    ),
+                    (self.alpha_stain_range[1] - self.alpha_stain_range[0])
+                    * torch.rand(n, 3, dtype=dtype, device=device)
+                    + self.alpha_stain_range[0],
                 ),
                 dim=-1,
             ),
             "beta_stain": torch.stack(
                 (
-                    self.beta_stain_range
-                    * self.he_ratio
-                    * (2 * torch.rand(n, 3, dtype=dtype, device=device) - 1),
-                    self.beta_stain_range
-                    * (2 * torch.rand(n, 3, dtype=dtype, device=device) - 1),
+                    self.he_ratio
+                    * (
+                        (self.beta_stain_range[1] - self.beta_stain_range[0])
+                        * torch.rand(n, 3, dtype=dtype, device=device)
+                        + self.beta_stain_range[0]
+                    ),
+                    (self.beta_stain_range[1] - self.beta_stain_range[0])
+                    * torch.rand(n, 3, dtype=dtype, device=device)
+                    + self.beta_stain_range[0],
                 ),
                 dim=-1,
             ),
