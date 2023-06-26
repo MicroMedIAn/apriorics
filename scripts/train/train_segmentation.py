@@ -355,9 +355,7 @@ if __name__ == "__main__":
         wd=args.wd,
         scheduler_func=scheduler_func,
         metrics=metrics,
-        stain_augmentor=StainAugmentor(
-            alpha_stain_range=0.2, beta_stain_range=0.1, p=args.p_augment
-        )
+        stain_augmentor=StainAugmentor(p=args.p_augment)
         if args.augment_stain
         else None,
         dl_lengths=(len(train_dl), len(val_dl)),
