@@ -60,6 +60,26 @@ stages:
       - ${base.data_path}/${local.train_path}/logs:
           persist: true
 
+  generate_patch_csvs_eval:
+    cmd: >-
+      python generate_patch_dataset.py
+      ${base}
+      --level ${patches.level}
+      --overlap ${patches.overlap}
+      --overwrite ${patches.overwrite}
+      --export_geojson ${patches.export_geojson}
+      --patch_size ${train.patch_size}
+      --slidefolder ${base.data_path}/${local.slide_path}
+      --maskfolder ${base.data_path}/${local.mask_path}
+      --outfolder ${base.data_path}/${local.train_path}
+      
+    deps:
+      - .downloaded_slides.csv
+      - ${base.data_path}/${local.mask_path}/${base.ihc_type}
+    outs:
+      - ${base.data_path}/${local.train_path}/${base.ihc_type}/${train.patch_size}_${patches.level}/patch_csvs:
+          persist: true
+
   evaluate:
     cmd: >-
       python predict_export_geojsons.py
@@ -69,13 +89,13 @@ stages:
       --maskfolder ${base.data_path}/${local.mask_path}
       --trainfolder ${base.data_path}/${local.train_path}
       --splitfile ${split.filename}
-      --base_size ${patches.patch_size}
       ${base}
       ${train}
       ${evaluate}
     deps:
       - .model_hash.yaml
       - ${base.data_path}/${local.train_path}/logs
+      - ${base.data_path}/${local.train_path}/${base.ihc_type}/${train.patch_size}_${patches.level}/patch_csvs
     outs:
       - ${base.data_path}/${local.evaluate_path}/${base.ihc_type}/:
           persist: true
