@@ -7,7 +7,6 @@ import numpy as np
 import pandas as pd
 import torch
 import yaml
-from albumentations import Crop
 from metrics_config import METRICS
 from pathaia.util.paths import get_files
 from pytorch_lightning.utilities.seed import seed_everything
@@ -109,15 +108,6 @@ parser.add_argument(
     help="Size of the patches used for training. Default 1024.",
 )
 parser.add_argument(
-    "--base_size",
-    type=int,
-    default=1024,
-    help=(
-        "Size of the patches used before crop for training. Must be greater or equal "
-        "to patch_size. Default 1024."
-    ),
-)
-parser.add_argument(
     "--level", type=int, default=0, help="WSI level for patch extraction. Default 0."
 )
 parser.add_argument(
@@ -184,7 +174,7 @@ if __name__ == "__main__":
     seed_everything(workers=True)
 
     trainfolder = args.trainfolder / args.ihc_type
-    patch_csv_folder = trainfolder / f"{args.base_size}_{args.level}/patch_csvs"
+    patch_csv_folder = trainfolder / f"{args.patch_size}_{args.level}/patch_csvs"
     slidefolder = args.slidefolder / args.ihc_type / "HE"
     maskfolder = args.maskfolder / args.ihc_type / "HE"
     logfolder = args.trainfolder / "logs"
@@ -262,81 +252,61 @@ if __name__ == "__main__":
 
     dataset_cls = get_dataset_cls(args.data_type)
 
-    if args.patch_size < args.base_size:
-        interval = int(0.9 * args.patch_size)
-        max_coord = args.base_size - args.patch_size
-        crops = []
-        for x in range(0, max_coord + 1, interval):
-            for y in range(0, max_coord + 1, interval):
-                crops.append((x, y, x + args.patch_size, y + args.patch_size))
-            if max_coord % interval != 0:
-                crops.append((x, max_coord, x + args.patch_size, args.base_size))
-                crops.append((max_coord, x, args.base_size, x + args.patch_size))
-        if max_coord % interval != 0:
-            crops.append((max_coord, max_coord, args.base_size, args.base_size))
-    else:
-        crops = [(0, 0, args.base_size, args.base_size)]
-
     all_metrics = {}
     for slide_path, mask_path, patches_path in zip(
         slide_paths[val_idxs], mask_paths[val_idxs], patches_paths[val_idxs]
     ):
         print(slide_path.stem)
         polygons = []
-        for crop in crops:
-            print(crop)
-            ds = dataset_cls(
-                [slide_path],
-                [mask_path],
-                [patches_path],
-                transforms=[Crop(*crop), ToTensor()],
-            )
-            dl = DataLoader(
-                ds,
-                batch_size=args.batch_size,
-                shuffle=False,
-                num_workers=args.num_workers,
-                pin_memory=True,
-            )
+        ds = dataset_cls(
+            [slide_path],
+            [mask_path],
+            [patches_path],
+            transforms=[ToTensor()],
+        )
+        dl = DataLoader(
+            ds,
+            batch_size=args.batch_size,
+            shuffle=False,
+            num_workers=args.num_workers,
+            pin_memory=True,
+        )
 
-            for batch_idx, (x, y) in tqdm(enumerate(dl), total=len(dl)):
-                x = x.to(device)
-                y_hat = torch.sigmoid(model(x))
-                if clf is not None:
-                    y_hat *= torch.sigmoid(clf(x))[:, None, None]
-                metrics(y_hat, y.int().to(device), x=x)
-                x = np.ascontiguousarray(
-                    (x.detach().cpu().numpy().transpose(0, 2, 3, 1) * 255),
-                    dtype=np.uint8,
-                )
-                y_hat = y_hat.cpu().numpy() > 0.5
-                for k, mask in enumerate(y_hat):
-                    if args.flood_mask:
-                        img = x[k]
-                        mask = flood_full_mask(
-                            img, mask, n=20, area_threshold=args.area_threshold
-                        )
-                    mask = remove_small_holes(mask, area_threshold=args.area_threshold)
-                    if not mask.sum():
-                        continue
-                    idx = batch_idx * args.batch_size + k
-                    patch = ds.patches[idx]
-                    polygon = mask_to_polygons_layer(mask, angle_th=0, distance_th=0)
-                    polygon = translate(
-                        polygon,
-                        xoff=patch.position.x + crop[0],
-                        yoff=patch.position.y + crop[1],
+        for batch_idx, (x, y) in tqdm(enumerate(dl), total=len(dl)):
+            x = x.to(device)
+            y_hat = torch.sigmoid(model(x))
+            if clf is not None:
+                y_hat *= torch.sigmoid(clf(x))[:, None, None]
+            metrics(y_hat, y.int().to(device), x=x)
+            x = np.ascontiguousarray(
+                (x.detach().cpu().numpy().transpose(0, 2, 3, 1) * 255),
+                dtype=np.uint8,
+            )
+            y_hat = y_hat.cpu().numpy() > 0.5
+            for k, mask in enumerate(y_hat):
+                if args.flood_mask:
+                    img = x[k]
+                    mask = flood_full_mask(
+                        img, mask, n=20, area_threshold=args.area_threshold
                     )
+                mask = remove_small_holes(mask, area_threshold=args.area_threshold)
+                if not mask.sum():
+                    continue
+                idx = batch_idx * args.batch_size + k
+                patch = ds.patches[idx]
+                polygon = mask_to_polygons_layer(mask, angle_th=0, distance_th=0)
+                polygon = translate(
+                    polygon,
+                    xoff=patch.position.x,
+                    yoff=patch.position.y,
+                )
 
-                    if (
-                        isinstance(polygon, Polygon)
-                        and polygon.area > args.area_threshold
-                    ):
-                        polygons.append(polygon)
-                    elif isinstance(polygon, MultiPolygon):
-                        for pol in polygon.geoms:
-                            if pol.area > args.area_threshold:
-                                polygons.append(pol)
+                if isinstance(polygon, Polygon) and polygon.area > args.area_threshold:
+                    polygons.append(polygon)
+                elif isinstance(polygon, MultiPolygon):
+                    for pol in polygon.geoms:
+                        if pol.area > args.area_threshold:
+                            polygons.append(pol)
 
         polygons = unary_union(polygons)
         if isinstance(polygons, Polygon):
