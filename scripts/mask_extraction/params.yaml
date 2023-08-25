@@ -1,9 +1,9 @@
 base:
-  data_path: /data/anapath/AprioricsSlides
+  data_path: /data/anapath/AprioricsSlides/
   ihc_type: AE1AE3
   mapping_file: ../../ihc_mapping.json
   mask_extension: .tif
-  remote_path: /media/AprioricsSlides
+  remote_path: /media/AprioricsSlides/
   slide_extension: .svs
 
 local:
@@ -28,3 +28,5 @@ mask_extraction:
   object_min_size: 1000
   binary_op: closing
   radius: 10
+  psize: 2000
+  overlap: 0.3
