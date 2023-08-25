@@ -175,21 +175,25 @@ def get_mask_AE1AE3(
     ihc_s = rgb2hsv(ihc)[:, :, 1]
     mask_he = binary_closing(
         remove_small_objects(
-            remove_small_holes((he_H > 0.005) & (he_hue > 0.69), area_threshold=1000),
+            remove_small_holes(
+                (he_H > 0.005) & (he_hue > 0.69), area_threshold=10**4
+            ),
             min_size=500,
         ),
         footprint=disk(10),
     )
     mask_ihc = binary_closing(
         remove_small_objects(
-            remove_small_holes((ihc_DAB > 0.03) & (ihc_s > 0.1), area_threshold=1000),
+            remove_small_holes(
+                (ihc_DAB > 0.03) & (ihc_s > 0.1), area_threshold=10**4
+            ),
             min_size=500,
         ),
         footprint=disk(10),
     )
     mask_he_DAB = binary_closing(
         remove_small_objects(
-            remove_small_holes(he_DAB > 0.03, area_threshold=1000), min_size=500
+            remove_small_holes(he_DAB > 0.03, area_threshold=10**4), min_size=500
         ),
         footprint=disk(10),
     )

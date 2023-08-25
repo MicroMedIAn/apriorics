@@ -12,8 +12,8 @@ def split_data_k_fold(
     k: int = 5,
     test_size: Union[int, float] = 0.1,
     seed: Optional[int] = None,
-    previous_splits: Optional[Dict[str, NDArray[Any]]] = None,
-) -> Dict[str, NDArray[Any]]:
+    previous_splits: Optional[Dict[str, NDArray[Any, Any]]] = None,
+) -> Dict[str, NDArray[Any, Any]]:
     r"""
     Split input data sequence into k folds and a test fold.
 
@@ -81,9 +81,9 @@ def split_data_k_fold_batched(
     k: int = 5,
     test_size: Union[int, float] = 0.1,
     seed: Optional[int] = None,
-    previous_splits: Optional[Dict[str, NDArray[Any]]] = None,
+    previous_splits: Optional[Dict[str, NDArray[Any, Any]]] = None,
     batch_size: int = 10,
-) -> Dict[str, NDArray[Any]]:
+) -> Dict[str, NDArray[Any, Any]]:
     r"""
     Split input data sequence into k folds and a test fold using small batches to ensure
     uniform distribution.
@@ -178,6 +178,30 @@ def filter_thumbnail(x):
     mask = (
         ((a > 7) | ((a > 2) & (b > -13)) & (l > 40))
         & ((a < 53) | (b < 93))
+        & (l < 98)
+        & (l > 10)
+    )
+    return filter_remove_small_objects(mask)
+
+
+def filter_thumbnail_mask_extraction(x):
+    """
+    Compute a tissue mask from a slide thumbnail.
+
+    Filters background, red pen, blue pen using La*b* space.
+
+    Args:
+        x: input thumbnail as a numpy byte array.
+
+    Returns:
+        Numpy binary mask where usable tissue is marked as True.
+
+    """
+    x = cv2.cvtColor(x.astype(np.float32) / 255, cv2.COLOR_RGB2Lab)
+    l, a, b = x.transpose(2, 0, 1)
+    mask = (
+        ((a > 5) | ((a > -1) & (b > -1)) & (l > 40))
+        & ((a < 55) | (b < 96))
         & (l < 98)
         & (l > 10)
     )

@@ -15,6 +15,7 @@ from PIL import Image
 from shapely.affinity import translate
 from shapely.ops import unary_union
 
+from apriorics.dataset_preparation import filter_thumbnail_mask_extraction
 from apriorics.masks import get_mask_function, get_tissue_mask, update_full_mask_mp
 from apriorics.polygons import mask_to_polygons_layer
 from apriorics.registration import full_registration, get_coord_transform
@@ -205,7 +206,7 @@ def register_extract_mask(args, patch_he):
             try:
                 ihc = Image.open(base_path / "ihc_warped.png").convert("RGB").crop(box)
             except FileNotFoundError:
-                print(f"[{pid}] ERROR: HE={patch_he}/IHC={patch_ihc}. Restarting...")
+                print(f"[{pid}] ERROR: HE={patch_he}/IHC={patch_ihc}. Skipping...")
                 container.stop()
                 container.remove()
                 return
@@ -315,7 +316,7 @@ def main(args):
                 (args.psize, args.psize),
                 (interval, interval),
                 thumb_size=5000,
-                slide_filters=["full"],
+                slide_filters=[filter_thumbnail_mask_extraction],
             )
             all_polygons = pool.map(_register_extract_mask, patch_iter)
             pool.close()
