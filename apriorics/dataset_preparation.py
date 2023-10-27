@@ -12,8 +12,8 @@ def split_data_k_fold(
     k: int = 5,
     test_size: Union[int, float] = 0.1,
     seed: Optional[int] = None,
-    previous_splits: Optional[Dict[str, NDArray[Any]]] = None,
-) -> Dict[str, NDArray[Any]]:
+    previous_splits: Optional[Dict[str, NDArray[Any, Any]]] = None,
+) -> Dict[str, NDArray[Any, Any]]:
     r"""
     Split input data sequence into k folds and a test fold.
 
@@ -81,9 +81,9 @@ def split_data_k_fold_batched(
     k: int = 5,
     test_size: Union[int, float] = 0.1,
     seed: Optional[int] = None,
-    previous_splits: Optional[Dict[str, NDArray[Any]]] = None,
+    previous_splits: Optional[Dict[str, NDArray[Any, Any]]] = None,
     batch_size: int = 10,
-) -> Dict[str, NDArray[Any]]:
+) -> Dict[str, NDArray[Any, Any]]:
     r"""
     Split input data sequence into k folds and a test fold using small batches to ensure
     uniform distribution.
