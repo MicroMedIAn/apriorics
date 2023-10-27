@@ -609,7 +609,7 @@ def full_registration(
     ihc, ihc_G, ihc_H = get_input_images(slide_ihc, patch_ihc)
 
     if not (
-        has_enough_tissue(he_G, whitetol=247, area_thr=0.2)
+        has_enough_tissue(he_G, whitetol=247, area_thr=0.05)
         and has_enough_tissue(ihc_G, whitetol=247, area_thr=0.05)
     ):
         print(f"[{pid}] Patch doesn't contain enough tissue, skipping.")
@@ -633,7 +633,7 @@ def full_registration(
 
     print(f"[{pid}] Starting registration...")
 
-    resample = int(100000 / patch_he.size[0])
+    resample = min(50, int(100000 / patch_he.size[0]))
 
     container = register(
         base_path,
