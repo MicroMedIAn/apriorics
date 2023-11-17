@@ -298,6 +298,50 @@ def get_mask_CD3CD20(
     return mask
 
 
+def get_mask_ERGPodoplanine(
+    he: Union[Image, NDImage], ihc: Union[Image, NDImage]
+) -> NDBoolMask:
+    r"""
+    Compute mask on paired PHH3 immunohistochemistry and H&E images.
+
+    Args:
+        he: input H&E image. Mask is computed using a threshold on H channel.
+        ihc: input immunohistochemistry image. Mask is computed using a threshold on
+            DAB channel.
+
+    Returns:
+        Intersection of H&E and IHC masks.
+    """
+    he = np.asarray(he)
+    he_H = rgb2hed(he)
+    he_DAB = he_H[:, :, 2]
+    he_H = he_H[:, :, 0]
+    he_hue = rgb2hsv(he)[:, :, 0]
+    ihc = np.asarray(ihc)
+    ihc_DAB = rgb2hed(ihc)[:, :, 2]
+    ihc_s = rgb2hsv(ihc)[:, :, 1]
+
+    mask_he1 = (he_H > 0.015) & (he_H < 0.14) & (he_hue > 0.67)
+    mask_he2 = get_mask_ink(he)
+    mask_he = remove_small_objects(
+        remove_small_holes(mask_he1 & ~mask_he2, area_threshold=50),
+        min_size=50,
+    )
+
+    mask_ihc = remove_small_objects(
+        remove_small_holes((ihc_DAB > 0.04) & (ihc_s > 0.1), area_threshold=50),
+        min_size=50,
+    )
+
+    mask_he_DAB = remove_small_objects(
+        remove_small_holes(he_DAB > 0.04, area_threshold=50), min_size=50
+    )
+
+    mask = remove_small_objects(mask_he & mask_ihc & ~mask_he_DAB, min_size=50)
+
+    return mask
+
+
 def get_mask_function(ihc_type: str) -> Callable:
     r"""
     Get mask function corresponding to an immunohistochemistry type.
