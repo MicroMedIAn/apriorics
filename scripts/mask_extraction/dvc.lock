@@ -22,27 +22,27 @@ stages:
       size: 134370
     outs:
     - path: /data/anapath/AprioricsSlides/masks/ERGPodoplanine
-      md5: fda40013719f400a9d727f06211bed56.dir
-      size: 4078055578
-      nfiles: 6
+      md5: 549dcf4bef38754a3f179a65029863c1.dir
+      size: 15976741224
+      nfiles: 24
     - path: /data/anapath/AprioricsSlides/wkts/ERGPodoplanine
-      md5: a79f0fd44666c8535180799abb3c061a.dir
-      size: 128262210
-      nfiles: 6
+      md5: 4f674cca23b6f96cd8396cb226336b25.dir
+      size: 224893777
+      nfiles: 11
   wkt_to_geojson:
     cmd: python ../utils/wkt2geojsons.py --mask_path masks --slide_path slides --wkt_path
       wkts --geojson_path geojsons --data_path /data/anapath/AprioricsSlides --ihc_type
       ERGPodoplanine
     deps:
     - path: /data/anapath/AprioricsSlides/wkts/ERGPodoplanine
-      md5: a79f0fd44666c8535180799abb3c061a.dir
-      size: 128262210
-      nfiles: 6
+      md5: 4f674cca23b6f96cd8396cb226336b25.dir
+      size: 224893777
+      nfiles: 11
     outs:
     - path: /data/anapath/AprioricsSlides/geojsons/ERGPodoplanine
-      md5: 1dec6e62a62fb66f381d468456cf0ee9.dir
-      size: 218340605
-      nfiles: 6
+      md5: d6e457d04d22559470501955d2691e67.dir
+      size: 382356829
+      nfiles: 11
   geojson_upload:
     cmd: python ../utils/file_transfer.py --data_path /media/AprioricsSlides --remote_path
       /data/anapath/AprioricsSlides --ihc_type ERGPodoplanine --mapping_file ../../ihc_mapping.json
@@ -50,9 +50,9 @@ stages:
       --add_tree
     deps:
     - path: /data/anapath/AprioricsSlides/geojsons/ERGPodoplanine
-      md5: 1dec6e62a62fb66f381d468456cf0ee9.dir
-      size: 218340605
-      nfiles: 6
+      md5: d6e457d04d22559470501955d2691e67.dir
+      size: 382356829
+      nfiles: 11
   mask_upload:
     cmd: python ../utils/file_transfer.py --data-path /media/AprioricsSlides --remote-path
       /data/anapath/AprioricsSlides --ihc-type PHH3 --mapping-file ../../ihc_mapping.json
