@@ -168,8 +168,6 @@ class SparseSegmentationDataset(Dataset):
                         self.patches.append(Patch.from_csv_row(patch))
                         self.n_pos.append(patch["n_pos"])
                         self.slide_idxs.append(slide_idx)
-                        self.slide_id.append(patch['global_id'].split('.svs')[0])
-
 
         self.n_pos = np.array(self.n_pos, dtype=np.uint64)
 
@@ -589,6 +587,108 @@ def get_dataset_cls(name):
     return _dataset_mapping[name.lower()]
 
 
+class ClassifDataset(Dataset):
+    r"""
+    PyTorch dataset for slide classification tasks.
+
+    Args:
+        slide_paths: list of slides' filepaths.
+        patches_paths: list of patch csvs' filepaths. Files must be formatted according
+            to `PathAIA API <https://github.com/MicroMedIAn/PathAIA>`_.
+        stain_matrices_paths: path to stain matrices .npy files. Each file must contain
+            a (2, 3) matrice to use for stain separation. If not sppecified while
+            `stain_augmentor` is, stain matrices will be computed at runtime (can cause
+            a bottleneckd uring training).
+        stain_augmentor: :class:`~apriorics.transforms.StainAugmentor` object to use for
+            stain augmentation.
+        transforms: list of `albumentation <https://albumentations.ai/>`_ transforms to
+            use on images (and on masks when relevant).
+        slide_backend: whether to use `OpenSlide <https://openslide.org/>`_ or
+            `cuCIM <https://github.com/rapidsai/cucim>`_ to load slides.
+        step: give a step n > 1 to load one every n patches only.
+    """
+
+    def __init__(
+        self,
+        slide_paths: Sequence[PathLike],
+        patches_paths: Sequence[PathLike],
+        stain_matrices_paths: Optional[Sequence[PathLike]] = None,
+        stain_augmentor: Optional[StainAugmentor] = None,
+        transforms: Optional[Sequence[BasicTransform]] = None,
+        slide_backend: str = "cucim",
+        step: int = 1,
+        area_thr: int = 50,
+        **kwargs
+    ):
+        super().__init__()
+        self.slides = []
+        self.masks = []
+        self.patches = []
+        self.slide_idxs = []
+        self.n_pos = []
+        self.area_thr = area_thr
+
+        for slide_idx, (patches_path, slide_path) in enumerate(
+            zip(patches_paths, slide_paths)
+        ):
+            self.slides.append(Slide(slide_path, backend=slide_backend))
+            with open(patches_path, "r") as patch_file:
+                reader = csv.DictReader(patch_file)
+                for k, patch in enumerate(reader):
+                    if k % step == 0:
+                        self.patches.append(Patch.from_csv_row(patch))
+                        self.n_pos.append(patch["n_pos"])
+                        self.slide_idxs.append(slide_idx)
+
+        self.n_pos = np.array(self.n_pos, dtype=np.uint64)
+
+        if stain_matrices_paths is None:
+            self.stain_matrices = None
+        else:
+            self.stain_matrices = [np.load(path) for path in stain_matrices_paths]
+        self.stain_augmentor = stain_augmentor
+        self.transforms = Compose(ifnone(transforms, []))
+
+    def __len__(self):
+        return len(self.patches)
+
+    def __getitem__(
+        self, idx: int
+    ) -> Tuple[Union[np.ndarray, torch.Tensor], Union[np.ndarray, torch.Tensor]]:
+        patch = self.patches[idx]
+        slide_idx = self.slide_idxs[idx]
+        slide = self.slides[slide_idx]
+        label = int(self.n_pos[idx] > self.area_thr)
+
+        slide_region = np.asarray(
+            slide.read_region(patch.position, patch.level, patch.size).convert("RGB")
+        )
+
+        if self.stain_augmentor is not None:
+            if self.stain_matrices is not None:
+                stain_matrix = self.stain_matrices[slide_idx]
+            else:
+                stain_matrix = None
+            slide_region = self.stain_augmentor(image=(slide_region, stain_matrix))[
+                "image"
+            ]
+
+        transformed = self.transforms(image=slide_region)
+        return transformed["image"], torch.tensor(label, dtype=torch.float32)
+
+
+_dataset_mapping = {
+    "segmentation": SegmentationDataset,
+    "segmentation_sparse": SparseSegmentationDataset,
+    "detection": DetectionDataset,
+    "classification": ClassifDataset,
+}
+
+
+def get_dataset_cls(name):
+    return _dataset_mapping[name.lower()]
+
+
 class BalancedRandomSampler(RandomSampler):
     def __init__(
         self,
@@ -635,21 +735,29 @@ class BalancedRandomSampler(RandomSampler):
             if len(avail) == 1:
                 cl_patches = avail[0]
                 n_patches = len(cl_patches)
-                max_draw = int(2**23)
+                max_draw = int(2 ** 23)
+                n_rest = n_patches % max_draw
                 n_draws = int(np.ceil(n_patches / max_draw))
                 idx = []
-                to_draw = int(np.ceil((num_samples - k) / n_draws))
-                for i in range(n_draws):
-                    if (n_draws > 1) and (i == n_draws - 1):
-                        to_draw = (num_samples - k) % to_draw
-                    idx.append(
-                        torch.multinomial(
-                            torch.ones(min(n_patches, int(max_draw))),
-                            to_draw,
-                            generator=self.generator,
-                        )
-                        + i * max_draw
-                    )
+                count = 0
+                to_draw = int(num_samples - k)
+                for i in range(n_draws - 1):
+                    p = torch.full((min(n_patches, max_draw),), to_draw / n_patches)
+                    draw = torch.nonzero(torch.bernoulli(p)).squeeze(1)
+                    count += len(draw)
+                    idx.append(draw + i * max_draw)
+                    if i == n_draws - 2:
+                        to_draw -= count
+                        if to_draw > n_rest:
+                            p = torch.ones(max_draw)
+                            p[draw] = 0
+                            draw = torch.multinomial(p, to_draw - n_rest)
+                            idx.append(draw + i * max_draw)
+                            to_draw = n_rest
+                idx.append(
+                    torch.multinomial(torch.ones(n_rest), to_draw)
+                    + (n_draws - 1) * max_draw
+                )
                 idx = torch.cat(idx)
                 idxs.extend([cl_patches[i] for i in idx])
                 break

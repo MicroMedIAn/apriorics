@@ -2,7 +2,7 @@ base:
   data_path: /data/anapath/AprioricsSlides
   ihc_type: PHH3
   mapping_file: ../../ihc_mapping.json
-  mask_extension: .tif
+  mask_extension: .npz
   remote_path: /media/AprioricsSlides
   slide_extension: .svs
   seed: 42
@@ -38,16 +38,16 @@ split:
   max_slide: 1288
 
 patches:
-  patch_size: 256
+  patch_size: 128
   level: 0
   overlap: 0.1
   filter_pos: 0
   overwrite: true
 
 train:
-  patch_size: 224
+  patch_size: 128
   level: 0
-  gpu: 0
+  gpu: 1
   batch_size: 32
   lr: 2e-4
   wd: 0.01
@@ -57,6 +57,11 @@ train:
   model: unet/resnet50
   loss: bce
   fold: 0
+  p_pos: 0.5
+  data_step: 1
+  data_type: segmentation_sparse
 
 evaluate:
   area_threshold: 50
+  test_fold: test
+  flood_mask: true

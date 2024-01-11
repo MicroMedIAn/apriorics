@@ -8,14 +8,7 @@ import pandas as pd
 import pytorch_lightning as pl
 import torch
 import yaml
-from albumentations import (
-    CenterCrop,
-    Flip,
-    RandomBrightnessContrast,
-    RandomCrop,
-    RandomRotate90,
-    Transpose,
-)
+from albumentations import CenterCrop
 from metrics_config import METRICS
 from pathaia.util.paths import get_files
 from pytorch_lightning.callbacks import ModelCheckpoint
@@ -23,6 +16,7 @@ from pytorch_lightning.loggers import CometLogger
 from pytorch_lightning.utilities.seed import seed_everything
 from timm import create_model
 from torch.utils.data import DataLoader
+from transforms_config import get_transforms
 
 from apriorics.data import (
     BalancedRandomSampler,
@@ -238,6 +232,22 @@ parser.add_argument(
 parser.add_argument(
     "--grad_clip", type=float, help="Value to use for gradient clipping. Optional."
 )
+parser.add_argument(
+    "--log_offline",
+    action="store_true",
+    help="Specify to use comet offline logging. Optional.",
+)
+parser.add_argument(
+    "--p_augment",
+    type=float,
+    default=0.5,
+    help="Probability to use augmentHE on each image. Default 0.5.",
+)
+parser.add_argument(
+    "--transforms",
+    default="base",
+    help="Name of the transform set from transforms_config.py. Default base.",
+)
 
 if __name__ == "__main__":
     __spec__ = None
@@ -265,17 +275,11 @@ if __name__ == "__main__":
 
     split_df = pd.read_csv(args.trainfolder / args.splitfile).sort_values("slide")
     split_df = split_df.loc[split_df["slide"].isin(patches_paths.map(lambda x: x.stem))]
+    test_idxs = (split_df["split"] == "test").values
     val_idxs = (split_df["split"] == args.fold).values
-    train_idxs = ~val_idxs
+    train_idxs = ~(val_idxs | test_idxs)
 
-    transforms = [
-        RandomCrop(args.patch_size, args.patch_size),
-        Flip(),
-        Transpose(),
-        RandomRotate90(),
-        RandomBrightnessContrast(),
-        ToTensor(),
-    ]
+    transforms = get_transforms(args.transforms, args.patch_size)
 
     dataset_cls = get_dataset_cls(args.data_type)
     train_ds = dataset_cls(
@@ -292,6 +296,11 @@ if __name__ == "__main__":
         transforms=[CenterCrop(args.patch_size, args.patch_size), ToTensor()],
         step=args.data_step,
     )
+
+    train_val_text = "=================Train=================\n"
+    train_val_text += "\n".join(map(lambda x: x.stem, slide_paths[train_idxs]))
+    train_val_text += "\n\n=================Valid=================\n"
+    train_val_text += "\n".join(map(lambda x: x.stem, slide_paths[val_idxs]))
 
     train_dl = DataLoader(
         train_ds,
@@ -346,7 +355,9 @@ if __name__ == "__main__":
         wd=args.wd,
         scheduler_func=scheduler_func,
         metrics=metrics,
-        stain_augmentor=StainAugmentor() if args.augment_stain else None,
+        stain_augmentor=StainAugmentor(p=args.p_augment)
+        if args.augment_stain
+        else None,
         dl_lengths=(len(train_dl), len(val_dl)),
     )
 
@@ -360,6 +371,8 @@ if __name__ == "__main__":
         project_name="apriorics",
         auto_metric_logging=False,
         experiment_name=os.getenv("DVC_EXP_NAME"),
+        offline=args.log_offline,
+        auto_output_logging=False,
     )
 
     if not args.horovod or hvd.rank() == 0:
@@ -373,6 +386,8 @@ if __name__ == "__main__":
         filename="{epoch}-{val_loss:.3f}",
     )
 
+    exp = logger.experiment
+    exp.log_text(train_val_text)
     trainer = pl.Trainer(
         gpus=1 if args.horovod else [args.gpu],
         min_epochs=args.epochs,
@@ -403,4 +418,4 @@ if __name__ == "__main__":
     finally:
         if args.hash_file is not None:
             with open(args.hash_file, "w") as f:
-                yaml.dump({args.fold: logger.version}, f)
+                yaml.dump({args.fold: exp.get_key()}, f)

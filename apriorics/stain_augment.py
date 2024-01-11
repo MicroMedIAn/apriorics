@@ -1,3 +1,6 @@
+import random
+from typing import Tuple, Union
+
 import torch
 import torch.nn as nn
 
@@ -439,48 +442,42 @@ def _normalized_from_concentrations(
 class StainAugmentor(nn.Module):
     def __init__(
         self,
-        alpha_range: float = 0.2,
-        beta_range: float = 0.1,
-        alpha_stain_range: float = 0.3,
-        beta_stain_range: float = 0.2,
-        he_ratio: float = 0.2,
+        alpha_range: Union[float, Tuple[float, float]] = (0.5, 2),
+        beta_range: Union[float, Tuple[float, float]] = (-0.15, 0.15),
+        stain_matrix_mins: Tuple[
+            Tuple[float, float], Tuple[float, float], Tuple[float, float]
+        ] = ((0.4, 0.3), (0.5, 0.5), (0.3, 0.3)),
+        stain_matrix_maxs: Tuple[
+            Tuple[float, float], Tuple[float, float], Tuple[float, float]
+        ] = ((0.7, 0.5), (1, 1), (0.7, 0.7)),
+        p: float = 0.5,
     ):
         super(StainAugmentor, self).__init__()
+
+        if isinstance(alpha_range, float):
+            alpha_range = (1 - alpha_range, 1 + alpha_range)
+        if isinstance(beta_range, float):
+            beta_range = (-beta_range, beta_range)
+
         self.alpha_range = alpha_range
         self.beta_range = beta_range
-        self.alpha_stain_range = alpha_stain_range
-        self.beta_stain_range = beta_stain_range
-        self.he_ratio = he_ratio
+        self.stain_matrix_mins = torch.tensor(stain_matrix_mins)
+        self.stain_matrix_maxs = torch.tensor(stain_matrix_maxs)
+        self.p = p
 
     def get_params(self, n, dtype=None, device=None):
+        stain_matrix_mins = self.stain_matrix_mins.to(dtype=dtype, device=device)[None]
+        stain_matrix_maxs = self.stain_matrix_maxs.to(dtype=dtype, device=device)[None]
         return {
-            "alpha": self.alpha_range
-            * (torch.rand(n, 2, dtype=dtype, device=device) * 2 - 1)
-            + 1,
-            "beta": self.beta_range
-            * (2 * torch.rand(n, 2, dtype=dtype, device=device) - 1),
-            "alpha_stain": torch.stack(
-                (
-                    self.alpha_stain_range
-                    * self.he_ratio
-                    * (torch.rand(n, 3, dtype=dtype, device=device) * 2 - 1)
-                    + 1,
-                    self.alpha_stain_range
-                    * (torch.rand(n, 3, dtype=dtype, device=device) * 2 - 1)
-                    + 1,
-                ),
-                dim=-1,
-            ),
-            "beta_stain": torch.stack(
-                (
-                    self.beta_stain_range
-                    * self.he_ratio
-                    * (2 * torch.rand(n, 3, dtype=dtype, device=device) - 1),
-                    self.beta_stain_range
-                    * (2 * torch.rand(n, 3, dtype=dtype, device=device) - 1),
-                ),
-                dim=-1,
-            ),
+            "alpha": (self.alpha_range[1] - self.alpha_range[0])
+            * torch.rand(n, 2, dtype=dtype, device=device)
+            + self.alpha_range[0],
+            "beta": (self.beta_range[1] - self.beta_range[0])
+            * torch.rand(n, 2, dtype=dtype, device=device)
+            + self.beta_range[0],
+            "stain_matrix": (stain_matrix_maxs - stain_matrix_mins)
+            * torch.rand(n, 3, 2, dtype=dtype, device=device)
+            + stain_matrix_mins,
         }
 
     def forward(self, x):
@@ -488,8 +485,6 @@ class StainAugmentor(nn.Module):
         params = self.get_params(x.shape[0], dtype=x.dtype, device=x.device)
         alpha = params["alpha"]
         beta = params["beta"]
-        alpha_stain = params["alpha_stain"]
-        beta_stain = params["beta_stain"]
 
         absorbance = _image_to_absorbance_matrix(x, channel_axis=0)
         stain_matrix = stain_extraction_pca(
@@ -497,8 +492,10 @@ class StainAugmentor(nn.Module):
         )
 
         HE = _get_raw_concentrations(stain_matrix, absorbance)
-        stain_matrix = stain_matrix * alpha_stain + beta_stain
-        stain_matrix = torch.clip(stain_matrix, 0, 1)
+        stain_matrix = params["stain_matrix"]
         HE = torch.where(HE > 0.2, (HE * alpha[..., None] + beta[..., None]), HE)
         out = _normalized_from_concentrations(HE, stain_matrix, 240, x.shape, 0)
+        for i in range(x.shape[0]):
+            if random.random() > self.p:
+                out[i] = x[i]
         return out.to(x.dtype) / 255
