@@ -77,7 +77,7 @@ if __name__ == "__main__":
         else:
             outfolder = local_path
         if not outfolder.exists():
-            outfolder.mkdir(parents=True)
+            outfolder.mkdir(parents=True, exist_ok=True)
 
         outfile = outfolder / f"{info['block']}{file.suffix}"
         if not (outfile.exists() and outfile.stat().st_size == file.stat().st_size):
