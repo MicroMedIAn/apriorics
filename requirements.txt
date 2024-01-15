@@ -1,4 +1,4 @@
-pathaia==0.2.2
+pathaia==0.2.3
 pillow==9.0.0
 numpy==1.21
 cucim==22.6.0
@@ -17,4 +17,3 @@ staintools==2.1.2
 docker==5.0.3
 geopandas==0.10.2
 dvc==2.36.0
-horovod[pytorch]==0.24.1
