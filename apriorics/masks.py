@@ -175,18 +175,14 @@ def get_mask_AE1AE3(
     ihc_s = rgb2hsv(ihc)[:, :, 1]
     mask_he = binary_closing(
         remove_small_objects(
-            remove_small_holes(
-                (he_H > 0.005) & (he_hue > 0.69), area_threshold=10**4
-            ),
+            remove_small_holes((he_H > 0.005) & (he_hue > 0.69), area_threshold=10**4),
             min_size=500,
         ),
         footprint=disk(10),
     )
     mask_ihc = binary_closing(
         remove_small_objects(
-            remove_small_holes(
-                (ihc_DAB > 0.03) & (ihc_s > 0.1), area_threshold=10**4
-            ),
+            remove_small_holes((ihc_DAB > 0.03) & (ihc_s > 0.1), area_threshold=10**4),
             min_size=500,
         ),
         footprint=disk(10),
@@ -294,6 +290,60 @@ def get_mask_CD3CD20(
     )
 
     mask = remove_small_objects(mask_he & mask_ihc & ~mask_he_DAB, min_size=100)
+
+    return mask
+
+
+def get_mask_ERGPodoplanine(
+    he: Union[Image, NDImage], ihc: Union[Image, NDImage]
+) -> NDBoolMask:
+    r"""
+    Compute mask on paired PHH3 immunohistochemistry and H&E images.
+
+    Args:
+        he: input H&E image. Mask is computed using a threshold on H channel.
+        ihc: input immunohistochemistry image. Mask is computed using a threshold on
+            DAB channel.
+
+    Returns:
+        Intersection of H&E and IHC masks.
+    """
+    he = np.asarray(he)
+    he_H = rgb2hed(he)
+    he_DAB = he_H[:, :, 2]
+    he_H = he_H[:, :, 0]
+    # he_hue = rgb2hsv(he)[:, :, 0]
+    ihc = np.asarray(ihc)
+    ihc_DAB = rgb2hed(ihc)[:, :, 2]
+    ihc_h = rgb2hsv(ihc)
+    ihc_s = ihc_h[:, :, 1]
+    ihc_v = ihc_h[:, :, 2]
+    ihc_h = ihc_h[:, :, 0]
+
+    # mask_he1 = (he_H > 0.015) & (he_H < 0.14) & (he_hue > 0.67)
+    # mask_he2 = get_mask_ink(he)
+    # mask_he = remove_small_objects(
+    #     remove_small_holes(mask_he1 & ~mask_he2, area_threshold=50),
+    #     min_size=50,
+    # )
+
+    mask_ihc = remove_small_objects(
+        remove_small_holes(
+            (ihc_DAB > 0.025) & (ihc_s > 0.1) & (ihc_v < 0.8) & (ihc_h < 0.1),
+            area_threshold=50,
+        ),
+        min_size=50,
+    )
+
+    mask_ihc_r = remove_small_objects(
+        remove_small_holes((ihc_h > 260 / 360) & (ihc_s > 0.1), area_threshold=50),
+        min_size=50,
+    )
+    mask_he_DAB = remove_small_objects(
+        remove_small_holes(he_DAB > 0.04, area_threshold=50), min_size=50
+    )
+
+    mask = remove_small_objects(mask_ihc & ~mask_he_DAB & ~mask_ihc_r, min_size=50)
 
     return mask
 
