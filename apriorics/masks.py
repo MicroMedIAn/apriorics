@@ -318,7 +318,7 @@ def get_mask_CD3CD20(
 
     mask_ihc = remove_small_objects(
         remove_small_holes(
-            (ihc_DAB > 0.01) & (ihc_s > 0.01) & (ihc_v < 0.85), area_threshold=50
+            (ihc_DAB > 0.01) & (ihc_s > 0.01) & (ihc_v < 0.85), area_threshold=600
         ),
         min_size=100,
     )
@@ -330,7 +330,9 @@ def get_mask_CD3CD20(
         min_size=100,
     )
 
-    mask = remove_small_objects(mask_ihc & ~mask_he_DAB, min_size=100)
+    mask = remove_small_objects(
+        remove_small_holes(mask_ihc & ~mask_he_DAB, area_threshold=600), min_size=100
+    )
 
     return mask
 
