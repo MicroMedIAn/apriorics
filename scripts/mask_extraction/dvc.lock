@@ -1,34 +1,34 @@
 schema: '2.0'
 stages:
   slide_download:
-    cmd: python ../utils/file_transfer.py --out-csv .downloaded_slides.csv --data-path
-      '/data/anapath/AprioricsSlides' --ihc-type 'CD3CD20' --mapping-file '../../ihc_mapping.json'
-      --mask-extension '.tif' --remote-path '/media/AprioricsSlides' --slide-extension
-      '.svs' --clean-previous --import-ihc --add-tree --extension .svs --rel-path
-      slides --remote-rel-path .
+    cmd: python ../utils/file_transfer.py --out_csv .downloaded_slides.csv --data_path
+      /data/anapath/AprioricsSlides --ihc_type CD3CD20 --mapping_file ../../ihc_mapping.json
+      --mask_extension .tif --remote_path /media/AprioricsSlides --slide_extension
+      .svs --clean_previous --import_ihc --add_tree --import_file ../../file_list.txt
+      --extension .svs --rel_path slides --remote_rel_path .
     outs:
     - path: .downloaded_slides.csv
-      md5: fb4fca2fcb18e657ffb0610d82558c5c
-      size: 167700
+      md5: 7021a25227feb51c0166d6cf826de52c
+      size: 6260
   mask_extraction:
-    cmd: python register_extract_polygons_masks_mp.py --data_path '/data/anapath/AprioricsSlides'
-      --ihc_type 'CD3CD20' --mapping_file '../../ihc_mapping.json' --mask_extension
-      '.tif' --remote_path '/media/AprioricsSlides' --slide_extension '.svs' --dab_thr
-      0.01 --object_min_size 100 --binary_op 'closing' --radius 5 --mask_path 'masks'
-      --slide_path 'slides' --wkt_path 'wkts' --geojson_path 'geojsons'
+    cmd: python register_extract_polygons_masks_mp.py --data_path /data/anapath/AprioricsSlides
+      --ihc_type CD3CD20 --mapping_file ../../ihc_mapping.json --mask_extension .tif
+      --remote_path /media/AprioricsSlides --slide_extension .svs --dab_thr 0.01 --object_min_size
+      100 --binary_op closing --radius 5 --mask_path masks_new --slide_path slides
+      --geojson_path geojsons_new --log_path registration_geojsons_new
     deps:
     - path: .downloaded_slides.csv
-      md5: fb4fca2fcb18e657ffb0610d82558c5c
-      size: 167700
+      md5: 7021a25227feb51c0166d6cf826de52c
+      size: 6260
     outs:
-    - path: /data/anapath/AprioricsSlides/masks/CD3CD20
-      md5: b61ef43ce809103f64e61ac7326befe5.dir
-      size: 312989888632
-      nfiles: 545
-    - path: /data/anapath/AprioricsSlides/wkts/CD3CD20
-      md5: 34f45fe56d298b6584837a489f6f09ea.dir
-      size: 8134712651
-      nfiles: 544
+    - path: /data/anapath/AprioricsSlides/geojsons_new/CD3CD20
+      md5: 707af27e185575bfd73772925718bb55.dir
+      size: 1720511733
+      nfiles: 8
+    - path: /data/anapath/AprioricsSlides/masks_new/CD3CD20
+      md5: 28702c381201c306ae407c72ece95a1a.dir
+      size: 8827624090
+      nfiles: 8
   wkt_to_geojson:
     cmd: python ../utils/wkt2geojsons.py --mask_path 'masks' --slide_path 'slides'
       --wkt_path 'wkts' --geojson_path 'geojsons' --data_path /data/anapath/AprioricsSlides
@@ -46,10 +46,10 @@ stages:
   geojson_upload:
     cmd: python ../utils/file_transfer.py --data_path /media/AprioricsSlides --remote_path
       /data/anapath/AprioricsSlides --ihc_type CD3CD20 --mapping_file ../../ihc_mapping.json
-      --recurse --extension .geojson --rel_path geojsons --remote_rel_path geojsons
+      --recurse --extension .geojson --rel_path geojsons_new --remote_rel_path geojsons_new
       --add_tree
     deps:
-    - path: /data/anapath/AprioricsSlides/geojsons/CD3CD20
-      md5: 8927edd740db86fc51548e1c9ff2722e.dir
-      size: 13985156811
-      nfiles: 544
+    - path: /data/anapath/AprioricsSlides/geojsons_new/CD3CD20
+      md5: 707af27e185575bfd73772925718bb55.dir
+      size: 1720511733
+      nfiles: 8

@@ -7,21 +7,21 @@ base:
   slide_extension: .svs
 
 local:
-  mask_path: masks
+  mask_path: masks_new
   slide_path: slides
-  wkt_path: wkts
-  geojson_path: geojsons
+  geojson_path: geojsons_new
+  log_path: registration_geojsons_new
 
 remote:
-  mask_path: masks
+  mask_path: masks_new
   slide_path: .
-  wkt_path: wkts
-  geojson_path: geojsons
+  geojson_path: geojsons_new
 
 slide_download:
   clean_previous: true
   import_ihc: true
   add_tree: true
+  import_file: ../../file_list.txt
 
 mask_extraction:
   dab_thr: 0.01
