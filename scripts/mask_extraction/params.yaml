@@ -1,6 +1,6 @@
 base:
   data_path: /data/anapath/AprioricsSlides
-  ihc_type: PHH3
+  ihc_type: ERGPodoplanine
   mapping_file: ../../ihc_mapping.json
   mask_extension: .tif
   remote_path: /media/AprioricsSlides
@@ -11,6 +11,7 @@ local:
   slide_path: slides
   wkt_path: wkts
   geojson_path: geojsons
+  log_path: registration_geojsons
 
 remote:
   mask_path: masks
@@ -24,6 +25,7 @@ slide_download:
   add_tree: true
 
 mask_extraction:
-  dab_thr: 0.04
-  object_min_size: 50
+  dab_thr: 0.015
+  object_min-size: 50
   binary_op: none
+  num_workers: 20 

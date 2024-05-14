@@ -1,0 +1,4 @@
+ihc_params:
+  dab-thr: 0.04
+  object-min-size: 50
+  binary-op: none

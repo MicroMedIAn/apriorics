@@ -24,18 +24,6 @@ stages:
     outs:
       - ${base.data_path}/${local.mask_path}/${base.ihc_type}:
           persist: true
-      - ${base.data_path}/${local.wkt_path}/${base.ihc_type}:
-          persist: true
-
-  wkt_to_geojson:
-    cmd: >-
-      python ../utils/wkt2geojsons.py
-      ${local}
-      --data_path ${base.data_path}
-      --ihc_type ${base.ihc_type}
-    deps:
-      - ${base.data_path}/${local.wkt_path}/${base.ihc_type}
-    outs:
       - ${base.data_path}/${local.geojson_path}/${base.ihc_type}:
           persist: true
 
