@@ -38,11 +38,12 @@ split:
   max_slide: 1288
 
 patches:
-  patch_size: 128
+  patch_size: 256
   level: 0
   overlap: 0.1
   filter_pos: 0
   overwrite: true
+  export_geojson: true
 
 train:
   patch_size: 128

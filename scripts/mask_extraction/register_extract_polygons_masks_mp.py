@@ -1,3 +1,4 @@
+import json
 from argparse import ArgumentParser
 from ctypes import c_bool
 from functools import partial
@@ -6,6 +7,7 @@ from pathlib import Path
 from subprocess import run
 
 import docker
+import geopandas
 import numpy as np
 from ordered_set import OrderedSet
 from pathaia.patches import slide_rois_no_image
@@ -13,6 +15,7 @@ from pathaia.util.paths import get_files
 from pathaia.util.types import Coord, Patch, Slide
 from PIL import Image
 from shapely.affinity import translate
+from shapely.geometry import MultiPolygon, Polygon, box
 from shapely.ops import unary_union
 
 from apriorics.dataset_preparation import filter_thumbnail_mask_extraction
@@ -110,7 +113,15 @@ parser.add_argument(
     ),
 )
 parser.add_argument("--mask_path", type=Path, help="Output mask folder.", required=True)
-parser.add_argument("--wkt_path", type=Path, help="Output wkt folder.", required=True)
+parser.add_argument(
+    "--geojson_path", type=Path, help="Output geojson folder.", required=True
+)
+parser.add_argument(
+    "--log_path",
+    type=Path,
+    help="Output log folder for unregistered patches.",
+    required=True,
+)
 parser.add_argument(
     "--novips",
     action="store_true",
@@ -243,23 +254,27 @@ def register_extract_mask(args, patch_he):
     container.remove()
 
     print(f"[{pid}] Mask done.")
-    return moved_polygons
+    return (patch_he, moved_polygons)
 
 
 def main(args):
     slidefolder = args.data_path / args.slide_path
     maskfolder = args.data_path / args.mask_path
-    wktfolder = args.data_path / args.wkt_path
+    geojsonfolder = args.data_path / args.geojson_path
     tmpfolder = args.data_path / args.tmp_path
+    logfolder = args.data_path / args.log_path
 
     if not maskfolder.exists():
         maskfolder.mkdir()
 
-    if not wktfolder.exists():
-        wktfolder.mkdir()
+    if not geojsonfolder.exists():
+        geojsonfolder.mkdir()
 
     if not tmpfolder.exists():
         tmpfolder.mkdir()
+
+    if not logfolder.exists():
+        logfolder.mkdir()
 
     interval = -int(args.overlap * args.psize)
 
@@ -322,16 +337,37 @@ def main(args):
             pool.close()
             pool.join()
 
-        all_polygons = [x for x in all_polygons if x is not None]
-        all_polygons = unary_union(all_polygons)
+        patch_polygons = []
+        obj_polygons = []
+        for polygon in all_polygons:
+            if polygon is not None:
+                patch, polygon = polygon
+                x, y = patch.position
+                p_w, p_h = patch.size
+                patch_polygons.append(box(x, y, x + p_w, y + p_h))
+                obj_polygons.append(polygon)
+
+        logfile = logfolder / hefile.relative_to(slidefolder).with_suffix(".geojson")
+        if not logfile.parent.exists():
+            logfile.parent.mkdir(parents=True)
+
+        patch_polygons = unary_union(patch_polygons)
+        if isinstance(patch_polygons, Polygon):
+            patch_polygons = MultiPolygon([patch_polygons])
+        with open(logfile, "w") as f:
+            json.dump(geopandas.GeoSeries(patch_polygons.geoms).__geo_interface__, f)
+
+        obj_polygons = unary_union(obj_polygons)
 
         print("Saving full polygons...")
 
-        wktfile = wktfolder / hefile.relative_to(slidefolder).with_suffix(".wkt")
-        if not wktfile.parent.exists():
-            wktfile.parent.mkdir(parents=True)
-        with wktfile.open("w") as f:
-            f.write(all_polygons.wkt)
+        geojsonfile = geojsonfolder / hefile.relative_to(slidefolder).with_suffix(
+            ".geojson"
+        )
+        if not geojsonfile.parent.exists():
+            geojsonfile.parent.mkdir(parents=True)
+        with geojsonfile.open("w") as f:
+            json.dump(geopandas.GeoSeries(obj_polygons.geoms).__geo_interface__, f)
 
         print("Polygons saved.")
 

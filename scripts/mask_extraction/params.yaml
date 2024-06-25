@@ -2,7 +2,7 @@ base:
   data_path: /data/anapath/AprioricsSlides
   ihc_type: PHH3
   mapping_file: ../../ihc_mapping.json
-  mask_extension: .tif
+  mask_extension: .npz
   remote_path: /media/AprioricsSlides
   slide_extension: .svs
 
@@ -19,7 +19,7 @@ remote:
   geojson_path: geojsons
 
 slide_download:
-  clean_previous: true
+  clean_previous: true 
   import_ihc: true
   add_tree: true
 

@@ -24,6 +24,7 @@ parser.add_argument("--recurse", action="store_true")
 parser.add_argument("--out_csv", type=Path)
 parser.add_argument("--num_workers", type=int, default=os.cpu_count())
 parser.add_argument("--add_tree", action="store_true")
+parser.add_argument("--import_file", type=Path)
 
 
 if __name__ == "__main__":
@@ -48,6 +49,12 @@ if __name__ == "__main__":
 
     files = get_files(remote_path, extensions=args.extension, recurse=args.recurse)
 
+    if args.import_file is not None:
+        with open(args.import_file, "r") as f:
+            slide_list = f.read().split("\n")
+    else:
+        slide_list = None
+
     def transfer_file(file):
         try:
             info = get_info_from_filename(file.stem, ihc_mapping)
@@ -69,6 +76,7 @@ if __name__ == "__main__":
         if not (
             info["ihc_type"] == args.ihc_type
             and (info["slide_type"] == "HE" or args.import_ihc)
+            and (slide_list is None or info["block"] in slide_list)
         ):
             return
 
@@ -77,7 +85,7 @@ if __name__ == "__main__":
         else:
             outfolder = local_path
         if not outfolder.exists():
-            outfolder.mkdir(parents=True)
+            outfolder.mkdir(parents=True, exist_ok=True)
 
         outfile = outfolder / f"{info['block']}{file.suffix}"
         if not (outfile.exists() and outfile.stat().st_size == file.stat().st_size):
