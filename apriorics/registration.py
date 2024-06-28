@@ -651,3 +651,91 @@ def full_registration(
     print(f"[{pid}] Registration done...")
 
     return container
+
+
+def full_registration_ihc(
+    slide_ihc: Slide,
+    slide_he: Slide,
+    patch_ihc: Patch,
+    patch_he: Patch,
+    base_path: PathLike,
+    dab_thr: float = 0.03,
+    object_min_size: int = 1000,
+    iterations: int = 20000,
+    threads=0,
+) -> bool:
+    r"""
+    Perform full registration process on patches from an IHC slide and a H&E slide.
+
+    Args:
+        slide_ihc: input IHC slide.
+        slide_he: input H&E slide.
+        patch_ihc: input IHC patch (fixed for the registration).
+        patch_he: input H&E patch (moving for the registration).
+        base_path: root path for all other files.
+        dab_thr: minimum value to use for DAB thresholding.
+        object_min_size: the smallest allowable object size to check if registration
+            needs to be performed.
+        iterations: number of iterations for initial rigid search.
+
+    Return:
+        True if registration was sucesfully performed, False otherwise.
+    """
+    pid = base_path.name
+    print(f"[{pid}] IHC: {patch_ihc.position} / HE: {patch_he.position}")
+
+    if not base_path.exists():
+        base_path.mkdir()
+
+    he_H_path = base_path / "he_H.png"
+    ihc_H_path = base_path / "ihc_H.png"
+    he_path = base_path / "he.png"
+    ihc_path = base_path / "ihc.png"
+    reg_path = base_path / "ihc_warped.png"
+
+    ihc, ihc_G, ihc_H = get_input_images(slide_ihc, patch_ihc)
+    he, he_G, he_H = get_input_images(slide_he, patch_he)
+
+    if not (
+        has_enough_tissue(he_G, whitetol=247, area_thr=0.05)
+        and has_enough_tissue(ihc_G, whitetol=247, area_thr=0.05)
+    ):
+        print(f"[{pid}] Patch doesn't contain enough tissue, skipping.")
+        return False
+
+    mask = get_dab_mask(ihc, dab_thr=dab_thr, object_min_size=object_min_size)
+
+    if mask.sum() < object_min_size:
+        print(f"[{pid}] Mask would be empty, skipping.")
+        return False
+
+    # he_H, ihc_H = equalize_contrasts(he_H, ihc_H, he_G, ihc_G)
+
+    imsave(he_H_path, he_H)
+    imsave(ihc_H_path, ihc_H)
+
+    imsave(he_path, he)
+    imsave(ihc_path, ihc)
+    container = convert_to_nifti(base_path, he_path)
+    container = convert_to_nifti(base_path, ihc_path, container=container)
+
+    print(f"[{pid}] Starting registration...")
+
+    resample = min(50, int(100000 / patch_he.size[0]))
+
+    container = register(
+        base_path,
+        ihc_H_path,
+        he_H_path,
+        he_path.with_suffix(".nii.gz"),
+        ihc_path.with_suffix(".nii.gz"),
+        reg_path.with_suffix(".nii.gz"),
+        container=container,
+        resample=resample,
+        iterations=iterations,
+        threads=threads,
+    )
+
+    print(f"[{pid}] Registration done...")
+
+    return container

@@ -107,3 +107,75 @@ If you want to do the inference on unlabeled data, use :
 ```
 python detect.py --weights ./runs/train/exp12_62epochs/weights/best.pt --source /path/to/data
 ```
+
+---
+
+# Kartezio
+
+## Data preparation
+
+
+First step is to adapt `config_kartezio.py`:
+
+```
+# Where the geojson of the annotations are located
+ANNOTATION_PATH = Path("/path/to/annotations") # Where the geojson files for the annotated slides are 
+assert ANNOTATION_PATH.exists()
+
+# Where most of the data will be stored
+BASE_PATH = Path("/path/to/storage") # Where all the data will be stored
+assert BASE_PATH.exists()
+
+# Slide number = slide number in files -4 (slides starts at 4)
+# 996 and 997 refers to 1108 and 1204 because we added them manually after the 999 inital one
+
+SLIDE_LIST = [105, 182, 724, 956, 997] # Number of the slide IN THE FOLDER
+
+SLIDE_TO_PATH = {
+    105: '21I000109-1-13-21_095813',
+    182: '21I000186-1-15-21_153809',
+    724: '21I000728-1-10-21_141128',
+    956: '21I000960-1-2-21_133557',
+    997: '21I001108-1-3-21_094208',
+    999: '21I001108-1-3-21_094208'
+} # Correspondance between the slide number in the folder and the file name
+
+SLIDE_FOLDER = Path("/path/to/AprioricsSlides/slides/PHH3/HE/") # Slide folder
+IHC_FOLDER = Path("path/to/AprioricsSlides/slides/PHH3/IHC/") # IHC Folder
+```
+
+Once this file is configured, run the following scripts :
+
+1 - Slide registration
+
+```python ihc_mask_registration.py```
+
+It takes as inputs the slides provided as well as their annotations (annotated patches). It extract the annotated patches and make the correspondance between HE and IHC patches.
+
+2 - Data pipeline
+
+```python kartezio_data_pipeline.py```
+
+First, put the annotated data in a usable format.
+Then extract the thumbnails of each annotated element, to prepare the manual annotation for kartezio. Once this is done, a manual annotation phase is neeeded. The general idea is to produce a `roi` file containing a drawing around the mitosis to detect (either on HE or IHC).
+Finally, split the dataset into training/testing and output `dataset.csv` needed for kartezio.
+
+3 - Training
+
+First, follow the installation steps provided in the [kartezio github repository](https://github.com/KevinCortacero/Kartezio)
+
+In the folder of the dataset and in the created environnement, run the following command :
+
+`kartezio-dataset name=mitose label_name=mitose`
+
+It creates a `meta.json` file. Please modify this file, in particular replace `label : type` from `csv` to `roi` and `label : format` from `ellipse` to `polygon`.
+
+Then, run the following script :
+
+```
+python kartezio_training.py
+```
+
+This will output a trained model, stored in a folder named after a hash which should look like this `364699-f92d8cbd-0a27-480f-b10d-2cfa73b6debf`.
+
+Please copy this hash to the notebook `kartezio_results.ipynb` and use the scripts to analyze the results.
