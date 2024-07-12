@@ -97,7 +97,7 @@ parser.add_argument(
     action="store_true",
     help="Specify to save geojson representation of patch extractions. Optional.",
 )
-
+parser.add_argument("--regfolder", type=Path)
 
 if __name__ == "__main__":
     args = parser.parse_known_args()[0]
@@ -144,6 +144,17 @@ if __name__ == "__main__":
                 mask = load_npz(mask_path)
         else:
             mask = None
+
+        if args.regfolder is not None:
+            reg_path = (
+                args.regfolder / args.ihc_type / f"HE/{in_file_path.stem}.geojson"
+            )
+            if not reg_path.exists():
+                return
+            gdf = geopandas.read_file(reg_path)
+        else:
+            gdf = None
+
         print(in_file_path.stem)
 
         patches = slide_rois_no_image(
@@ -160,6 +171,13 @@ if __name__ == "__main__":
             writer = csv.DictWriter(out_file, fieldnames=Patch.get_fields() + ["n_pos"])
             writer.writeheader()
             for patch in patches:
+                if gdf is not None:
+                    x, y = patch.position
+                    w, h = patch.size
+                    pol = box(x, y, x + w, y + h)
+                    if not gdf["geometry"].contains(pol).any():
+                        continue
+
                 if mask is not None:
                     if isinstance(mask, Slide):
                         patch_mask = np.asarray(

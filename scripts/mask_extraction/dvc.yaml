@@ -6,7 +6,7 @@ stages:
       ${base}
       ${slide_download}
       --extension ${base.slide_extension}
-      --rel_path ${local.slide_path}
+      --rel_path ${local.main_slide_path}
       --remote_rel_path ${remote.slide_path}
     outs:
       - .downloaded_slides.csv:
@@ -25,6 +25,8 @@ stages:
       - ${base.data_path}/${local.mask_path}/${base.ihc_type}:
           persist: true
       - ${base.data_path}/${local.geojson_path}/${base.ihc_type}:
+          persist: true
+      - ${base.data_path}/${local.log_path}/${base.ihc_type}:
           persist: true
 
   geojson_upload:
