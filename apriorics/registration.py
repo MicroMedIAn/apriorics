@@ -14,7 +14,7 @@ from pathaia.util.types import (
     Patch,
     Slide,
 )
-from skimage.color import rgb2hed
+from skimage.color import rgb2hed, rgb2hsv
 from skimage.io import imsave
 from skimage.measure import label
 from skimage.morphology import (
@@ -25,7 +25,7 @@ from skimage.morphology import (
 )
 from skimage.util import img_as_float, img_as_ubyte
 
-from apriorics.masks import get_dab_mask, get_tissue_mask
+from apriorics.masks import get_dab_mask, get_tissue_mask, get_tissue_mask_hsv
 
 
 def get_dot_mask(
@@ -42,20 +42,20 @@ def get_dot_mask(
     Returns:
         Mask array with fixing dots segmented.
     """
+    usr = 2 ** (2 * (3 - thumb_level))
     thumb = np.asarray(
         slide.read_region(
             (0, 0),
             thumb_level,
             slide.level_dimensions[thumb_level],
-        )
+        ).convert("RGB")
     )
-    mask = np.ones(thumb.shape[:2], dtype=bool)
-    for i in range(3):
-        mask = mask & (min_val < thumb[:, :, i]) & (thumb[:, :, i] < max_val)
-        mask = remove_small_holes(
-            remove_small_objects(mask, min_size=250), area_threshold=500
-        )
-    return mask
+    thumb_hsv = rgb2hsv(thumb)
+    mask = (thumb_hsv[:, :, 1] <= 0.35) & (thumb_hsv[:, :, 2] <= 0.35)
+    mask = remove_small_holes(
+        remove_small_objects(mask, min_size=400 * usr), area_threshold=500 * usr
+    )
+    return thumb, mask
 
 
 def get_angle(
@@ -116,11 +116,18 @@ def get_vertices(mask: NDBoolMask, centroid: Tuple[int, int]) -> List[Tuple[int,
     """
     labels = label(mask)
     vertices = []
+    sizes = []
     for i in range(1, labels.max() + 1):
         ii, jj = (labels == i).nonzero()
+        if len(ii) > 4000:
+            continue
         vertices.append((int(jj.mean()), int(ii.mean())))
-    vertices.sort(key=get_sort_key(vertices, centroid))
-    return vertices
+        sizes.append(len(ii))
+    key = get_sort_key(vertices, centroid)
+    idxs = np.argsort([key(v) for v in vertices])
+    vertices = [vertices[i] for i in idxs]
+    sizes = [sizes[i] for i in idxs]
+    return vertices, sizes
 
 
 def get_rotation(
@@ -217,12 +224,17 @@ def equalize_vert_lengths(
         l1: first list of vertices coordinates.
         l2: second list of vertices coordinates.
     """
+    l1, l1_sizes = l1
+    l2, l2_sizes = l2
     if len(l1) > len(l2):
         ltemp = l1
+        ltemp_sizes = l1_sizes
         centroidtemp = centroid1
         l1 = l2
+        l1_sizes = l2_sizes
         centroid1 = centroid2
         l2 = ltemp
+        l2_sizes = ltemp_sizes
         centroid2 = centroidtemp
 
     def _key(x):
@@ -239,11 +251,23 @@ def equalize_vert_lengths(
     cur_angle = _key(sorted_l2[-1])
     while len(l2) > len(l1) or cur_angle > max_angle:
         to_remove = sorted_l2.pop()
-        cur_angle = _key(sorted_l2[-1])
-        l2.remove(to_remove)
+        k = l2.index(to_remove)
+        l2.pop(k)
+        l2_sizes.pop(k)
+        if sorted_l2:
+            cur_angle = _key(sorted_l2[-1])
+        else:
+            break
+
+    if not l2:
+        while l1:
+            l1.pop()
+        return
 
     if len(l1) != len(l2):
-        equalize_vert_lengths(l1, l2, centroid1, centroid2, max_angle=max_angle)
+        equalize_vert_lengths(
+            (l1, l1_sizes), (l2, l2_sizes), centroid1, centroid2, max_angle=max_angle
+        )
 
 
 def get_affine_transform(
@@ -267,21 +291,32 @@ def get_affine_transform(
     Returns:
         Tuple containing the rotation, the scale and the translation 3x3 matrices.
     """
-    fixed_vert = get_vertices(fixed, centroid_fixed)
-    moving_vert = get_vertices(moving, centroid_moving)
+    fixed_vert, fixed_sizes = get_vertices(fixed, centroid_fixed)
+    moving_vert, moving_sizes = get_vertices(moving, centroid_moving)
 
-    if not (len(fixed_vert) and len(moving_vert)):
-        fixed_vert = [centroid_fixed]
-        moving_vert = [centroid_moving]
-    else:
+    if fixed_vert and moving_vert:
         if len(fixed_vert) != len(moving_vert):
             equalize_vert_lengths(
-                fixed_vert, moving_vert, centroid_fixed, centroid_moving
+                (fixed_vert, fixed_sizes),
+                (moving_vert, moving_sizes),
+                centroid_fixed,
+                centroid_moving,
             )
+        to_keep = []
+        for k in range(len(fixed_vert)):
+            ratio = fixed_sizes[k] / moving_sizes[k]
+            if 0.9 < ratio < 1.1:
+                to_keep.append(k)
+
+        fixed_vert = [fixed_vert[k] for k in to_keep]
+        moving_vert = [moving_vert[k] for k in to_keep]
         while len(fixed_vert) > 4:
             fixed_vert.pop()
         while len(moving_vert) > 4:
             moving_vert.pop()
+
+    if not (fixed_vert and moving_vert):
+        return
 
     fixed_vert = np.array(fixed_vert)
     moving_vert = np.array(moving_vert)
@@ -302,10 +337,8 @@ def get_affine_transform(
     return rot, scale, trans
 
 
-def get_centroid(slide, thumb_size):
-    ii, jj = get_tissue_mask(
-        np.asarray(slide.get_thumbnail(thumb_size).convert("L"))
-    ).nonzero()
+def get_centroid(thumb):
+    ii, jj = get_tissue_mask_hsv(rgb2hsv(thumb)).nonzero()
     centroid = (int(np.median(jj)), int(np.median(ii)))
     return centroid
 
@@ -325,11 +358,11 @@ def get_coord_transform(
         A function that takes coordinates from the H&E slide as input and returns the
         corresponding coords in the IHC slide.
     """
-    thumb_level = slide_he.level_count - 1
-    mask_he = get_dot_mask(slide_he, thumb_level=thumb_level)
-    mask_ihc = get_dot_mask(slide_ihc, thumb_level=thumb_level)
-    centroid_he = get_centroid(slide_he, mask_he.T.shape)
-    centroid_ihc = get_centroid(slide_ihc, mask_ihc.T.shape)
+    thumb_level = min(slide_he.level_count, slide_ihc.level_count) - 1
+    thumb_he, mask_he = get_dot_mask(slide_he, thumb_level=thumb_level)
+    thumb_ihc, mask_ihc = get_dot_mask(slide_ihc, thumb_level=thumb_level)
+    centroid_he = get_centroid(thumb_he)
+    centroid_ihc = get_centroid(thumb_ihc)
     rot, scale, trans = get_affine_transform(
         mask_ihc, mask_he, centroid_ihc, centroid_he
     )

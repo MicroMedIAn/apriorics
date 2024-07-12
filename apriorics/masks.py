@@ -58,6 +58,26 @@ def get_tissue_mask(img_G: NDByteGrayImage, blacktol: int = 0, whitetol: int = 2
     return (img_G > blacktol) & (img_G < whitetol)
 
 
+def get_tissue_mask_hsv(img, stol: int = 0.35, vtol: int = 0.35):
+    r"""
+    Get basic tissue mask from grayscale image.
+
+    Args:
+        img_G: grayscale input image as numpy byte array.
+        blacktol: minimum value to be considered foreground.
+        whitetol: maximul value to be considered foreground.
+
+    Returns:
+        Mask as a boolean array.
+    """
+    return remove_small_objects(
+        (img[:, :, 2] > 0.2)
+        & ((img[:, :, 1] > stol) | (img[:, :, 2] > vtol))
+        & (img[:, :, 2] < 0.96),
+        min_size=500,
+    )
+
+
 def get_dab_mask(
     ihc: NDImage,
     dab_thr: float = 0.03,
@@ -320,18 +340,18 @@ def get_mask_CD3CD20(
         remove_small_holes(
             (ihc_DAB > 0.01) & (ihc_s > 0.01) & (ihc_v < 0.85), area_threshold=600
         ),
-        min_size=100,
+        min_size=50,
     )
 
     mask_he_DAB = remove_small_objects(
         remove_small_holes(
             binary_closing(he_DAB > 0.03, footprint=disk(2)), area_threshold=300
         ),
-        min_size=100,
+        min_size=50,
     )
 
     mask = remove_small_objects(
-        remove_small_holes(mask_ihc & ~mask_he_DAB, area_threshold=600), min_size=100
+        remove_small_holes(mask_ihc & ~mask_he_DAB, area_threshold=600), min_size=50
     )
 
     return mask

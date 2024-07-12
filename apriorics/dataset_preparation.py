@@ -200,7 +200,7 @@ def filter_thumbnail_mask_extraction(x):
     x = cv2.cvtColor(x.astype(np.float32) / 255, cv2.COLOR_RGB2Lab)
     l, a, b = x.transpose(2, 0, 1)
     mask = (
-        ((a > 5) | ((a > -1) & (b > -1)) & (l > 40))
+        ((a > 5) | ((a > -1) & (b > -13)) & (l > 40))
         & ((a < 55) | (b < 96))
         & (l < 98)
         & (l > 10)

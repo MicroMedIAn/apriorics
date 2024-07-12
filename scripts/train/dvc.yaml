@@ -72,6 +72,7 @@ stages:
       --slidefolder ${base.data_path}/${local.slide_path}
       --maskfolder ${base.data_path}/${local.mask_path}
       --outfolder ${base.data_path}/${local.train_path}
+      --regfolder ${base.data_path}/${local.reg_path}
       
     deps:
       - .downloaded_slides.csv
