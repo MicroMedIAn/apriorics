@@ -214,3 +214,24 @@ def hovernet_to_geojson(
     geojson_dict = {"type": "FeatureCollection", "features": geojson_feats}
     with open(outfile, "w") as f:
         json.dump(geojson_dict, f)
+
+
+def update_pols_hovernet(
+    pols, hovernet_pols, iou_thr=0.2, nuc_min_size=0, nuc_max_size=24
+):
+    nuc_min_size = nuc_min_size / 0.25**2
+    nuc_max_size = nuc_max_size / 0.25**2
+    filt_pols = []
+    for hovernet_pol in hovernet_pols.geoms:
+        area = hovernet_pol.area
+        if area > nuc_max_size or area < nuc_min_size:
+            continue
+        for pol in pols.geoms:
+            if not pol.intersects(hovernet_pol):
+                continue
+            inter = pol.intersection(hovernet_pol).area
+            iou = inter / (area + 1e-7)
+            if iou > iou_thr:
+                filt_pols.append(hovernet_pol)
+                break
+    return MultiPolygon(filt_pols)
