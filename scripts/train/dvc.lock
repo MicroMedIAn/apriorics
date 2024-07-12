@@ -8,27 +8,28 @@ stages:
       --remote_rel_path .
     outs:
     - path: .downloaded_slides.csv
-      md5: 27a82aed3239c9bd8d1d46171b8891ec
-      size: 87983
+      md5: b22086e2f3720da570407aeff2b49b12
+      size: 67649
   generate_patch_csvs:
     cmd: python generate_patch_dataset.py --data_path /data/anapath/AprioricsSlides
       --ihc_type CD3CD20 --mapping_file ../../ihc_mapping.json --mask_extension .tif
       --remote_path /media/AprioricsSlides --slide_extension .svs --seed 42 --patch_size
-      512 --level 0 --overlap 0.1 --filter_pos 0 --overwrite --slidefolder /data/anapath/AprioricsSlides/slides
-      --maskfolder /data/anapath/AprioricsSlides/masks --outfolder /data/anapath/AprioricsSlides/train
+      512 --level 0 --overlap 0.1 --filter_pos 0 --overwrite --export_geojson --slidefolder
+      /data/anapath/AprioricsSlides/slides --maskfolder /data/anapath/AprioricsSlides/masks
+      --outfolder /data/anapath/AprioricsSlides/train
     deps:
     - path: .downloaded_slides.csv
-      md5: 27a82aed3239c9bd8d1d46171b8891ec
-      size: 87983
+      md5: b22086e2f3720da570407aeff2b49b12
+      size: 67649
     - path: /data/anapath/AprioricsSlides/masks/CD3CD20
-      md5: b61ef43ce809103f64e61ac7326befe5.dir
-      size: 312989888632
-      nfiles: 545
+      md5: 94c17695aa2d309bb9ebd37c34abb5d0.dir
+      size: 23268777024
+      nfiles: 34
     outs:
     - path: /data/anapath/AprioricsSlides/train/CD3CD20/512_0/patch_csvs
-      md5: 3c8a245e4f06361b94fe77be8fe6df6f.dir
-      size: 298593237
-      nfiles: 544
+      md5: a61687a8df672b108813aeb11edf26c9.dir
+      size: 28127232
+      nfiles: 33
   split_dataset:
     cmd: python split_full_dataset.py --out_csv /data/anapath/AprioricsSlides/train/splits.csv
       --locked_test_file /data/anapath/AprioricsSlides/train/pam50_slides.txt --data_path
@@ -44,51 +45,55 @@ stages:
     cmd: python train_segmentation.py --hash_file .model_hash.yaml --data_path /data/anapath/AprioricsSlides
       --ihc_type CD3CD20 --mapping_file ../../ihc_mapping.json --mask_extension .tif
       --remote_path /media/AprioricsSlides --slide_extension .svs --seed 42 --patch_size
-      256 --level 0 --gpu 0 --batch_size 32 --lr 0.0002 --wd 0.1 --epochs 4 --num_workers
-      32 --scheduler one-cycle --model unet/resnet50 --loss bce --fold 0 --p_pos 0.8
+      224 --level 0 --gpu 0 --batch_size 32 --lr 0.0002 --wd 0.1 --epochs 4 --num_workers
+      32 --scheduler one-cycle --model unet/resnet50 --loss bce --fold 0 --p_pos 0.7
       --data_step 1 --data_type segmentation --augment_stain --p_augment 0.5 --transforms
-      hovernet --splitfile splits.csv --base_size 512 --slidefolder /data/anapath/AprioricsSlides/slides
+      base --splitfile splits.csv --base_size 512 --slidefolder /data/anapath/AprioricsSlides/slides
       --maskfolder /data/anapath/AprioricsSlides/masks --trainfolder /data/anapath/AprioricsSlides/train
     deps:
     - path: /data/anapath/AprioricsSlides/train/CD3CD20/512_0/patch_csvs
-      md5: 3c8a245e4f06361b94fe77be8fe6df6f.dir
-      size: 298593237
-      nfiles: 544
+      md5: a61687a8df672b108813aeb11edf26c9.dir
+      size: 28127232
+      nfiles: 33
     - path: /data/anapath/AprioricsSlides/train/splits.csv
       md5: bc15256060dfdce2f06a9b524b162b86
       size: 15819
     outs:
     - path: .model_hash.yaml
-      md5: b3304e68c31132a0fb4780d42b7d00e2
+      md5: 328cf42101ec258eb908e227e06da1e6
       size: 38
     - path: /data/anapath/AprioricsSlides/train/logs
-      md5: c95960c5ba8e70779d06b876b3e3a443.dir
-      size: 78623516627
-      nfiles: 102
+      md5: b1d77f0461cbea1899574d721e3ba7af.dir
+      size: 65599228029
+      nfiles: 84
   evaluate:
     cmd: python predict_export_geojsons.py --hash_file .model_hash.yaml --outfolder
       /data/anapath/AprioricsSlides/evaluate --slidefolder /data/anapath/AprioricsSlides/slides
       --maskfolder /data/anapath/AprioricsSlides/masks --trainfolder /data/anapath/AprioricsSlides/train
-      --splitfile splits.csv --base_size 512 --data_path /data/anapath/AprioricsSlides
-      --ihc_type CD3CD20 --mapping_file ../../ihc_mapping.json --mask_extension .tif
-      --remote_path /media/AprioricsSlides --slide_extension .svs --seed 42 --patch_size
-      256 --level 0 --gpu 0 --batch_size 32 --lr 0.0002 --wd 0.1 --epochs 4 --num_workers
-      32 --scheduler one-cycle --model unet/resnet50 --loss bce --fold 0 --p_pos 0.8
-      --data_step 1 --data_type segmentation --augment_stain --p_augment 0.5 --transforms
-      hovernet --area_threshold 100 --test_fold test
+      --splitfile splits.csv --data_path /data/anapath/AprioricsSlides --ihc_type
+      CD3CD20 --mapping_file ../../ihc_mapping.json --mask_extension .tif --remote_path
+      /media/AprioricsSlides --slide_extension .svs --seed 42 --patch_size 224 --level
+      0 --gpu 0 --batch_size 32 --lr 0.0002 --wd 0.1 --epochs 4 --num_workers 32 --scheduler
+      one-cycle --model unet/resnet50 --loss bce --fold 0 --p_pos 0.7 --data_step
+      1 --data_type segmentation --augment_stain --p_augment 0.5 --transforms base
+      --area_threshold 100 --test_fold test
     deps:
     - path: .model_hash.yaml
-      md5: b3304e68c31132a0fb4780d42b7d00e2
+      md5: 328cf42101ec258eb908e227e06da1e6
       size: 38
+    - path: /data/anapath/AprioricsSlides/train/CD3CD20/224_0/patch_csvs
+      md5: 6fb8aee705d8aad15f30f23d8ffac2df.dir
+      size: 113295554
+      nfiles: 33
     - path: /data/anapath/AprioricsSlides/train/logs
-      md5: c95960c5ba8e70779d06b876b3e3a443.dir
-      size: 78623516627
-      nfiles: 102
+      md5: b1d77f0461cbea1899574d721e3ba7af.dir
+      size: 65599228029
+      nfiles: 84
     outs:
     - path: /data/anapath/AprioricsSlides/evaluate/CD3CD20/
-      md5: 8656a281761181817c956342e6d56088.dir
-      size: 11548134219
-      nfiles: 764
+      md5: bfa68388f83ce4267393cb5346aaeea4.dir
+      size: 105051608
+      nfiles: 14
   geojson_upload:
     cmd: python ../utils/file_transfer.py --data-path /media/AprioricsSlides --remote-path
       /data/anapath/AprioricsSlides --ihc-type PHH3 --mapping-file ../../ihc_mapping.json
@@ -103,6 +108,26 @@ stages:
     cmd: rsync -avu /data/anapath/AprioricsSlides/evaluate/CD3CD20/ /media/AprioricsSlides/evaluate/CD3CD20/
     deps:
     - path: /data/anapath/AprioricsSlides/evaluate/CD3CD20/
-      md5: 8656a281761181817c956342e6d56088.dir
-      size: 11548134219
-      nfiles: 764
+      md5: bfa68388f83ce4267393cb5346aaeea4.dir
+      size: 105051608
+      nfiles: 14
+  generate_patch_csvs_eval:
+    cmd: python generate_patch_dataset.py --data_path /data/anapath/AprioricsSlides
+      --ihc_type CD3CD20 --mapping_file ../../ihc_mapping.json --mask_extension .tif
+      --remote_path /media/AprioricsSlides --slide_extension .svs --seed 42 --level
+      0 --overlap 0.1 --overwrite true --export_geojson true --patch_size 224 --slidefolder
+      /data/anapath/AprioricsSlides/slides --maskfolder /data/anapath/AprioricsSlides/masks
+      --outfolder /data/anapath/AprioricsSlides/train --regfolder /data/anapath/AprioricsSlides/registration_geojsons
+    deps:
+    - path: .downloaded_slides.csv
+      md5: b22086e2f3720da570407aeff2b49b12
+      size: 67649
+    - path: /data/anapath/AprioricsSlides/masks/CD3CD20
+      md5: 94c17695aa2d309bb9ebd37c34abb5d0.dir
+      size: 23268777024
+      nfiles: 34
+    outs:
+    - path: /data/anapath/AprioricsSlides/train/CD3CD20/224_0/patch_csvs
+      md5: 6fb8aee705d8aad15f30f23d8ffac2df.dir
+      size: 113295554
+      nfiles: 33

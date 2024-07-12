@@ -7,18 +7,20 @@ base:
   slide_extension: .svs
 
 local:
-  mask_path: masks_new
-  slide_path: slides
-  geojson_path: geojsons_new
-  log_path: registration_geojsons_new
+  mask_path: masks
+  main_slide_path: slides
+  slide_path: slides_tmp
+  geojson_path: geojsons
+  log_path: registration_geojsons
+  hovernet_path: hovernet_geojsons
 
 remote:
-  mask_path: masks_new
+  mask_path: masks
   slide_path: .
-  geojson_path: geojsons_new
+  geojson_path: geojsons
 
 slide_download:
-  clean_previous: true
+  clean_previous: false
   import_ihc: true
   add_tree: true
   import_file: ../../file_list.txt
@@ -28,3 +30,6 @@ mask_extraction:
   object_min_size: 100
   binary_op: closing
   radius: 5
+  nuc_min_size: 0
+  nuc_max_size : 24
+  num_workers: 30

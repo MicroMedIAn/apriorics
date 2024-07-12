@@ -10,15 +10,14 @@ base:
 local:
   mask_path: masks
   slide_path: slides
-  wkt_path: wkts
   geojson_path: geojsons
   train_path: train
   evaluate_path: evaluate
+  reg_path: registration_geojsons
 
 remote:
   mask_path: masks
   slide_path: .
-  wkt_path: wkts
   geojson_path: geojsons
   train_path: train
   evaluate_path: evaluate
@@ -46,7 +45,7 @@ patches:
   export_geojson: true
 
 train:
-  patch_size: 256
+  patch_size: 224
   level: 0
   gpu: 0
   batch_size: 32
@@ -58,12 +57,12 @@ train:
   model: unet/resnet50
   loss: bce
   fold: 0
-  p_pos: 0.8
+  p_pos: 0.7
   data_step: 1
   data_type: segmentation
   augment_stain: true
   p_augment: 0.5
-  transforms: hovernet
+  transforms: base
 
 evaluate:
   area_threshold: 100
