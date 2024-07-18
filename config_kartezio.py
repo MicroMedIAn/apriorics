@@ -22,6 +22,15 @@ SLIDE_TO_PATH = {
     999: '21I001108-1-3-21_094208'
 }
 
+SLIDE_TO_PID_HOVERNET = {
+    105: '21I000109',
+    182: '21I000186',
+    724: '21I000728',
+    956: '21I000960',
+    997: '21I001108',
+}
+
 SLIDE_FOLDER = Path("/home/elliot/AprioricsSlides/slides/PHH3/HE/")
 IHC_FOLDER = Path("/home/elliot/AprioricsSlides/slides/PHH3/IHC/")
+HOVERNET_FOLDER = Path("/data/anapath/AprioricsSlides/hovernet_geojsons/PHH3")
 

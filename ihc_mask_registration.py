@@ -15,7 +15,6 @@ import pandas as pd
 from masking import get_annotations
 from config_kartezio import BASE_PATH, ANNOTATION_PATH, SLIDE_LIST, SLIDE_TO_PATH, SLIDE_FOLDER, IHC_FOLDER
 
-
 # For convenience
 class arguments():
 
@@ -64,7 +63,6 @@ def get_slides(slide_folder, ihc_folder, slide_number):
 
     slide_backend: str = "cucim"
     slide_path = slide_paths[slide_number]
-    print("slide_path = ", slide_path)
     ihc_path = ihc_paths[slide_number]
     slide_he = Slide(slide_path)
     slide_ihc = Slide(ihc_path)
@@ -146,6 +144,7 @@ def main():
         # These shouldn't differ
         mitosis_area_dfs = format_annotation(geo_df)
         slide_he, slide_ihc = get_slides(SLIDE_FOLDER, IHC_FOLDER, slide_number)
+
         for idx, df in enumerate(mitosis_area_dfs):
 
             dic_annotation = get_annotations(df)

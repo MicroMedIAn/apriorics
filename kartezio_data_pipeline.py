@@ -12,8 +12,18 @@ import pandas as pd
 from masking import get_annotations
 from ihc_mask_registration import format_annotation, get_slides
 from pathlib import Path
-from config_kartezio import BASE_PATH, ANNOTATION_PATH, SLIDE_LIST, SLIDE_TO_PATH, SLIDE_FOLDER, IHC_FOLDER
-
+from masking import get_annotations, get_hovernet_boxes
+from shapely.geometry import Polygon
+from config_kartezio import (
+    BASE_PATH,
+    ANNOTATION_PATH,
+    SLIDE_LIST,
+    SLIDE_TO_PATH,
+    SLIDE_FOLDER,
+    IHC_FOLDER,
+    HOVERNET_FOLDER,
+    SLIDE_TO_PID_HOVERNET
+)
 
 def construct_slide_dic():
     dic_slide = {}
@@ -22,6 +32,9 @@ def construct_slide_dic():
         geo_df = gpd.read_file(ANNOTATION_PATH / f"{SLIDE_TO_PATH[slide_number]}.geojson")
 
         mitosis_area_dfs = format_annotation(geo_df)
+
+        geo_path_hovernet = HOVERNET_FOLDER / f"{SLIDE_TO_PID_HOVERNET[slide_number]}.geojson"
+        geojson_hovernet = gpd.read_file(geo_path_hovernet)
 
         dic_out_annot = {}
         for idx, df in enumerate(mitosis_area_dfs):
@@ -33,6 +46,14 @@ def construct_slide_dic():
             # Adapt the position of the image, so after the cropping we still should have the full annotation
 
             dic_annotation['new_position'] = (dic_annotation['position'][0] - crop_size_x, dic_annotation['position'][1] - crop_size_y)
+                        
+            area_coords = dic_annotation['area']
+            area_polygon = Polygon(area_coords)
+        
+            filtered_df = geojson_hovernet[geojson_hovernet['geometry'].apply(lambda geom: geom.within(area_polygon))]
+            list_boxes = get_hovernet_boxes(filtered_df, dic_annotation)
+            dic_annotation['hovernet'] = list_boxes
+            
             dic_out_annot[idx] = dic_annotation
         
         dic_slide[slide_number] = dic_out_annot
@@ -45,6 +66,7 @@ def csv_format_annotations(dic_slide, base_path):
     for idx_sld, (idx_slide, dic_out_annot) in enumerate(dic_slide.items()):
         for idx, value in dic_out_annot.items():
             dic_df = {}
+            idx_final = 0
             for j, liste in enumerate(value['annotations']):
                 dic_temp = {}
                 dic_temp['x1'] = liste['coord'][0][0]
@@ -53,6 +75,18 @@ def csv_format_annotations(dic_slide, base_path):
                 dic_temp['x2'] = liste['coord'][2][0]
                 dic_temp['label'] = liste['annotation_class']
                 dic_df[j] = dic_temp
+                idx_final = j
+
+            for j, box in enumerate(value['hovernet']):
+                j = idx_final + j
+                dic_temp = {}
+                dic_temp['x1'] = box[0]
+                dic_temp['y1'] = box[1]
+                dic_temp['x2'] = box[2]
+                dic_temp['y2'] = box[3]
+                dic_temp['label'] = 'mitosis_no'
+                dic_df[j] = dic_temp
+                
             df = pd.DataFrame.from_dict(dic_df, orient='index')
             print("writing to", base_path / SLIDE_TO_PATH[idx_slide] / str(idx) / "annotations.csv")
             df.to_csv(base_path / SLIDE_TO_PATH[idx_slide] / str(idx) / "annotations.csv")
@@ -95,8 +129,8 @@ def extract_annotated_thumbnails(base_path):
             # Add Padding here
             # Process each row in the annotations dataframe
             for index, row in annotations.iterrows():
-                x1, y1, x2, y2, label = row['x1'], row['y1'], row['x2'], row['y2'], row['label']
-                print(x1, y1, x2, y2, label)
+                # Conversion to int should probably be done beforehand
+                x1, y1, x2, y2, label = int(row['x1']), int(row['y1']), int(row['x2']), int(row['y2']), row['label']
                 # Crop both images using the annotation coordinates
                 he_crop = he_array[y1:y2, x1:x2]
                 ihc_crop = ihc_array[y1:y2, x1:x2]
@@ -115,10 +149,12 @@ def extract_annotated_thumbnails(base_path):
                 ihc_crop_filename = f'ihc_{index}.png'
                 he_crop_path = os.path.join(output_dir_he, he_crop_filename)
                 ihc_crop_path = os.path.join(output_dir_ihc, ihc_crop_filename)
-                try :
+                try:
                     cv2.imwrite(he_crop_path, he_crop)
                     cv2.imwrite(ihc_crop_path, ihc_crop)
-                except:
+                except Exception as error:
+                    print(x1, y1, x2, y2, label)
+                    print("not writing:", error)
                     continue
              
 def kartezio_dataset_formating(base_path):   
@@ -154,6 +190,7 @@ def kartezio_dataset_formating(base_path):
                             path_img = f"{SLIDE_TO_PATH[slide]}/{dir}/no_ihc/{file}"
                             list_img_no.append(path_img)
             # this break is needed, otherwise it goes to all subdirectories as well
+            # Would be nice to fix this
             break
 
     list_img_yes.sort()
