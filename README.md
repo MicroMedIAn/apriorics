@@ -148,13 +148,17 @@ Once this file is configured, run the following scripts :
 
 1 - Slide registration
 
-```python ihc_mask_registration.py```
+```
+python ihc_mask_registration.py
+```
 
 It takes as inputs the slides provided as well as their annotations (annotated patches). It extract the annotated patches and make the correspondance between HE and IHC patches.
 
 2 - Data pipeline
 
-```python kartezio_data_pipeline.py```
+```
+python kartezio_data_pipeline.py
+```
 
 First, put the annotated data in a usable format.
 Then extract the thumbnails of each annotated element, to prepare the manual annotation for kartezio. Once this is done, a manual annotation phase is neeeded. The general idea is to produce a `roi` file containing a drawing around the mitosis to detect (either on HE or IHC).
@@ -176,6 +180,17 @@ Then, run the following script :
 python kartezio_training.py
 ```
 
+By default, the color space used is RGB, but you can also use HED or HSV, or combine them :
+
+```
+python kartezio_training.py {RGB,HED,HSV}
+```
+
 This will output a trained model, stored in a folder named after a hash which should look like this `364699-f92d8cbd-0a27-480f-b10d-2cfa73b6debf`.
 
 Please copy this hash to the notebook `kartezio_results.ipynb` and use the scripts to analyze the results.
+
+
+4 - Inference and visualization
+
+Two notebooks are provided in order to run the inference of the newly trained model (`kartezio_inference.ipynb`) and visualize the results (`kartezio_visualization.ipynb`). The first one must be run using `kartezio` environment while the second must be run using `apriorics` environment.
