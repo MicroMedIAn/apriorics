@@ -1,6 +1,6 @@
 base:
   data_path: /data/anapath/AprioricsSlides
-  ihc_type: PHH3
+  ihc_type: P40ColIV
   mapping_file: ../../ihc_mapping.json
   mask_extension: .tif
   remote_path: /media/AprioricsSlides
