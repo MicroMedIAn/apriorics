@@ -182,9 +182,13 @@ def get_patch_iter(slide_he, psize, interval, gdf):
         slide_filters=[filter_thumbnail_mask_extraction],
     ):
         if gdf is not None:
-            fgdf = gdf["geometry"].clip_by_rect(
-                *patch.position, *(patch.position + patch.size)
-            )
+            try:
+                fgdf = gdf["geometry"].clip_by_rect(
+                    *patch.position, *(patch.position + patch.size)
+                )
+            except:
+                print(patch)
+                raise
             fgdf = fgdf.loc[fgdf.apply(lambda x: isinstance(x, Polygon))]
         else:
             fgdf = None
@@ -374,6 +378,9 @@ def main(args):
 
         if args.hovernet_path is not None:
             gdf = geopandas.read_file(hovernetfiles[k])
+            gdf = gdf.loc[
+                gdf["geometry"].apply(lambda x: isinstance(x, Polygon) and x.is_valid)
+            ]
         else:
             gdf = None
 
