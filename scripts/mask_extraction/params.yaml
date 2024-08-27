@@ -12,6 +12,7 @@ local:
   wkt_path: wkts
   geojson_path: geojsons
   log_path: registration_geojsons
+  hovernet_path: hovernet_gpkgs
 
 remote:
   mask_path: masks
