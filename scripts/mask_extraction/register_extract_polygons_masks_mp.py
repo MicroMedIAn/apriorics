@@ -172,7 +172,7 @@ def get_filefilter(slidefile):
     return _filter
 
 
-def get_patch_iter(slide_he, psize, interval, gdf):
+def get_patch_iter(slide_he, psize, interval, hovernet_path):
     for patch in slide_rois_no_image(
         slide_he,
         0,
@@ -181,10 +181,13 @@ def get_patch_iter(slide_he, psize, interval, gdf):
         thumb_size=5000,
         slide_filters=[filter_thumbnail_mask_extraction],
     ):
-        if gdf is not None:
+        if hovernet_path is not None:
             try:
-                fgdf = gdf["geometry"].clip_by_rect(
-                    *patch.position, *(patch.position + patch.size)
+                fgdf = geopandas.read_file(
+                    hovernet_path,
+                    engine="pyogrio",
+                    use_arrow=True,
+                    bbox=(*patch.position, *(patch.position + patch.size)),
                 )
             except:
                 print(patch)
@@ -376,14 +379,6 @@ def main(args):
         hefile = Path(hefile)
         ihcfile = Path(ihcfile)
 
-        if args.hovernet_path is not None:
-            gdf = geopandas.read_file(hovernetfiles[k])
-            gdf = gdf.loc[
-                gdf["geometry"].apply(lambda x: isinstance(x, Polygon) and x.is_valid)
-            ]
-        else:
-            gdf = None
-
         maskpath = maskfolder / hefile.relative_to(slidefolder).with_suffix(".png")
         if not maskpath.parent.exists():
             maskpath.parent.mkdir(parents=True)
@@ -393,8 +388,8 @@ def main(args):
 
         print(hefile, ihcfile)
 
-        slide_he = Slide(slidefolder / hefile, backend="cucim")
-        slide_ihc = Slide(slidefolder / ihcfile, backend="cucim")
+        slide_he = Slide(hefile, backend="cucim")
+        slide_ihc = Slide(ihcfile, backend="cucim")
         w, h = slide_he.dimensions
 
         lock = Lock()
@@ -406,7 +401,12 @@ def main(args):
             initializer=pool_init_func,
             initargs=(slide_he, slide_ihc, full_mask),
         ) as pool:
-            patch_iter = get_patch_iter(slide_he, args.psize, interval, gdf)
+            patch_iter = get_patch_iter(
+                slide_he,
+                args.psize,
+                interval,
+                args.hovernet_path / f"{hefile.stem}.gpkg",
+            )
             all_polygons = pool.map(_register_extract_mask, patch_iter)
             pool.close()
             pool.join()

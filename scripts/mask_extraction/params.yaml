@@ -12,7 +12,7 @@ local:
   slide_path: slides_tmp
   geojson_path: geojsons
   log_path: registration_geojsons
-  hovernet_path: hovernet_geojsons
+  hovernet_path: hovernet_gpkgs
 
 remote:
   mask_path: masks
