@@ -411,6 +411,58 @@ def get_mask_ERGPodoplanine(
     return mask
 
 
+def get_mask_P40ColIV(
+    he: Union[Image, NDImage], ihc: Union[Image, NDImage]
+) -> NDBoolMask:
+    r"""
+    Compute mask on paired PHH3 immunohistochemistry and H&E images.
+
+    Args:
+        he: input H&E image. Mask is computed using a threshold on H channel.
+        ihc: input immunohistochemistry image. Mask is computed using a threshold on
+            DAB channel.
+
+    Returns:
+        Intersection of H&E and IHC masks.
+    """
+    he = np.asarray(he)
+    he_H = rgb2hed(he)
+    he_DAB = he_H[:, :, 2]
+    he_H = he_H[:, :, 0]
+    ihc = np.asarray(ihc)
+    ihc_DAB = rgb2hed(ihc)[:, :, 2]
+    ihc_h = rgb2hsv(ihc)
+    ihc_s = ihc_h[:, :, 1]
+    ihc_v = ihc_h[:, :, 2]
+    ihc_h = ihc_h[:, :, 0]
+
+    mask_ihc = remove_small_objects(
+        remove_small_holes(
+            (ihc_DAB > 0.01)
+            & (ihc_s > 0.1)
+            & ~((ihc_s < 0.2) & (ihc_v > 0.6))
+            & (ihc_s < 0.55)
+            & (ihc_v < 0.8)
+            & (ihc_v > 0.2)
+            & ((ihc_h < 0.08) | (ihc_h > 0.96)),
+            area_threshold=50,
+        ),
+        min_size=20,
+    )
+
+    mask_ihc_r = remove_small_holes(
+        ((ihc_h < 5 / 360) | (ihc_h > 230 / 360)) & (ihc_s > 0.3) & (ihc_v > 0.4),
+        area_threshold=100,
+    )
+    mask_he_DAB = remove_small_objects(
+        remove_small_holes(he_DAB > 0.04, area_threshold=50), min_size=50
+    )
+
+    mask = remove_small_objects(mask_ihc & ~mask_he_DAB & ~mask_ihc_r, min_size=50)
+
+    return mask
+
+
 def get_mask_function(ihc_type: str) -> Callable:
     r"""
     Get mask function corresponding to an immunohistochemistry type.
