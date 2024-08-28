@@ -10,15 +10,14 @@ base:
 local:
   mask_path: masks
   slide_path: slides
-  wkt_path: wkts
   geojson_path: geojsons
   train_path: train
   evaluate_path: evaluate
+  reg_path: registration_geojsons
 
 remote:
   mask_path: masks
   slide_path: .
-  wkt_path: wkts
   geojson_path: geojsons
   train_path: train
   evaluate_path: evaluate

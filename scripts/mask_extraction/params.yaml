@@ -31,3 +31,5 @@ mask_extraction:
   object_min-size: 50
   binary_op: none
   num_workers: 20 
+  iou_thr: 0.05
+  nuc_max_siz: 40
