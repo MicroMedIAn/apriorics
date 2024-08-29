@@ -2,6 +2,7 @@ import json
 from os import PathLike
 from typing import Optional
 
+import geopandas as gpd
 import numpy as np
 from albumentations.augmentations.crops.functional import get_center_crop_coords
 from nptyping import Int, NDArray, Number, Shape
@@ -144,6 +145,7 @@ def hovernet_to_geojson(
     crop_size: Optional[int] = None,
     xoff: Optional[int] = None,
     yoff: Optional[int] = None,
+    gpkgfile: Optional[PathLike] = None,
 ):
     """
     Take a hovernet json output file and convert it to a geojson file. Optionally crop
@@ -214,6 +216,9 @@ def hovernet_to_geojson(
     geojson_dict = {"type": "FeatureCollection", "features": geojson_feats}
     with open(outfile, "w") as f:
         json.dump(geojson_dict, f)
+    if gpkgfile is not None:
+        gdf = gpd.GeoDataFrame.from_features(geojson_dict["features"])
+        gdf.to_file(gpkgfile)
 
 
 def update_pols_hovernet(

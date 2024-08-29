@@ -13,6 +13,7 @@ parser.add_argument(
 parser.add_argument(
     "--geojsonfolder", type=Path, help="Output geojson folder.", required=True
 )
+parser.add_argument("--gpkgfolder", type=Path, help="Output gpkg folder. Optional")
 parser.add_argument("--slidefolder", type=Path)
 parser.add_argument("--crop_size", type=int)
 
@@ -28,7 +29,11 @@ if __name__ == "__main__":
     for jsonfile in jsonfiles:
         slidename = ".".join(jsonfile.name.split(".")[:-1])
         geojsonfile = args.geojsonfolder / f"{slidename}.geojson"
-        if geojsonfile.exists():
+        if args.gpkgfolder is not None:
+            gpkgfile = args.gpkgfolder / f"{slidename}.gpkg"
+        else:
+            gpkgfile = None
+        if geojsonfile.exists() and (gpkgfile is None or gpkgfile.exists()):
             continue
         print(slidename)
         if args.slidefolder is not None:
@@ -44,5 +49,10 @@ if __name__ == "__main__":
             x = 0
             y = 0
         hovernet_to_geojson(
-            jsonfile, geojsonfile, crop_size=args.crop_size, xoff=-x, yoff=-y
+            jsonfile,
+            geojsonfile,
+            crop_size=args.crop_size,
+            xoff=-x,
+            yoff=-y,
+            gpkgfile=gpkgfile,
         )
