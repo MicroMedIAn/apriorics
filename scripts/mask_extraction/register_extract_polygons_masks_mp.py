@@ -192,7 +192,9 @@ def get_patch_iter(slide_he, psize, interval, hovernet_path):
             except Exception as e:
                 print(patch, e)
                 raise
-            fgdf = fgdf.loc[fgdf["geometry"].apply(lambda x: isinstance(x, Polygon))]
+            fgdf = fgdf.loc[
+                fgdf["geometry"].apply(lambda x: isinstance(x, Polygon)), "geometry"
+            ]
         else:
             fgdf = None
         yield patch, fgdf
@@ -295,7 +297,7 @@ def register_extract_mask(args, patch_gdf):
     if gdf is not None:
         moved_polygons = update_pols_hovernet(
             moved_polygons,
-            MultiPolygon(gdf.values),
+            MultiPolygon(gdf.values.tolist()),
             iou_thr=args.iou_thr,
             nuc_min_size=args.nuc_min_size,
             nuc_max_size=args.nuc_max_size,
