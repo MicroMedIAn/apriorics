@@ -189,10 +189,10 @@ def get_patch_iter(slide_he, psize, interval, hovernet_path):
                     use_arrow=True,
                     bbox=(*patch.position, *(patch.position + patch.size)),
                 )
-            except:
-                print(patch)
+            except Exception as e:
+                print(patch, e)
                 raise
-            fgdf = fgdf.loc[fgdf.apply(lambda x: isinstance(x, Polygon))]
+            fgdf = fgdf.loc[fgdf["geometry"].apply(lambda x: isinstance(x, Polygon))]
         else:
             fgdf = None
         yield patch, fgdf
@@ -364,7 +364,7 @@ def main(args):
     if args.hovernet_path is not None:
         hovernetfolder = args.data_path / args.hovernet_path
         hovernetfiles = get_files(
-            hovernetfolder / args.ihc_type, extensions=".geojson", recurse=False
+            hovernetfolder / args.ihc_type, extensions=".gpkg", recurse=False
         )
         hovernetnames = OrderedSet(hovernetfiles.map(lambda x: x.stem.split("-")[0]))
         inter = inter & hovernetnames
@@ -378,6 +378,7 @@ def main(args):
     for k, (hefile, ihcfile) in enumerate(zip(hefiles, ihcfiles)):
         hefile = Path(hefile)
         ihcfile = Path(ihcfile)
+        hovernetfile = Path(hovernetfiles[k])
 
         maskpath = maskfolder / hefile.relative_to(slidefolder).with_suffix(".png")
         if not maskpath.parent.exists():
@@ -405,7 +406,7 @@ def main(args):
                 slide_he,
                 args.psize,
                 interval,
-                args.hovernet_path / f"{hefile.stem}.gpkg",
+                hovernetfile,
             )
             all_polygons = pool.map(_register_extract_mask, patch_iter)
             pool.close()
