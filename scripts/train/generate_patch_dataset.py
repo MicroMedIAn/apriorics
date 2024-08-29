@@ -14,7 +14,7 @@ from shapely.geometry import MultiPolygon, Polygon, box
 from shapely.ops import unary_union
 from skimage.morphology import remove_small_objects
 
-from apriorics.dataset_preparation import filter_thumbnail
+from apriorics.dataset_preparation import filter_thumbnail_mask_extraction
 
 parser = ArgumentParser(prog="Generates the PathAIA patch CSVs for slides.")
 parser.add_argument(
@@ -162,7 +162,7 @@ if __name__ == "__main__":
             args.level,
             psize=args.patch_size,
             interval=interval,
-            slide_filters=[filter_thumbnail],
+            slide_filters=[filter_thumbnail_mask_extraction],
             thumb_size=2000,
         )
 
