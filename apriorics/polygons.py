@@ -224,10 +224,10 @@ def update_pols_hovernet(
     filt_pols = []
     for hovernet_pol in hovernet_pols.geoms:
         area = hovernet_pol.area
-        if area > nuc_max_size or area < nuc_min_size:
+        if area > nuc_max_size or area < nuc_min_size or not hovernet_pol.is_valid:
             continue
         for pol in pols.geoms:
-            if not pol.intersects(hovernet_pol):
+            if not pol.is_valid or not pol.intersects(hovernet_pol):
                 continue
             inter = pol.intersection(hovernet_pol).area
             iou = inter / (area + 1e-7)
