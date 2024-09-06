@@ -1,49 +1,55 @@
 #!/bin/bash
 
-# Check if at least 3 arguments are provided (source_branch, source_commit, and at least one target_branch)
-if [ "$#" -lt 3 ]; then
-    echo "Usage: $0 source_branch source_commit target_branch1 target_branch2 ... target_branchn"
-    exit 1
-fi
+# Définir la branche de départ et les branches cibles directement dans le script
+TARGET_BRANCHES=("master" "ae1ae3" "phh3" "ERGPodoplanine" "P40ColIV" "cd3cd20")  # Liste des branches cibles
 
-# Assign the first argument as the source branch and the second as the commit to cherry-pick
-SOURCE_BRANCH=$1
-SOURCE_COMMIT=$2
+IGNORE_BRANCHES=("$@")
+# Obtenir la branche actuelle
+SOURCE_BRANCH=$(git rev-parse --abbrev-ref HEAD)
 
-# Shift the arguments to get the list of target branches
-shift 2
-TARGET_BRANCHES=("$@")
+# Obtenir le dernier commit de la branche de départ
+LAST_COMMIT=$(git rev-parse HEAD)
 
-# Fetch the latest branches information from remote
+echo "Branche de départ : $SOURCE_BRANCH"
+echo "Dernier commit : $LAST_COMMIT"
+
+# Fetch les dernières informations des branches distantes
 git fetch origin
 
-# Checkout to the source branch and make sure it's up-to-date
-git checkout "$SOURCE_BRANCH"
-git pull origin "$SOURCE_BRANCH"
-
-# Loop through each target branch and cherry-pick the commit
+# Loop pour chaque branche cible
 for TARGET_BRANCH in "${TARGET_BRANCHES[@]}"; do
-    echo "Processing branch: $TARGET_BRANCH"
+    # Ignorer la branche source si elle est dans la liste des branches cibles
+    if [ "$TARGET_BRANCH" == "$SOURCE_BRANCH" ]; then
+        echo "Ignorer la branche de départ '$SOURCE_BRANCH'."
+        continue
+    fi
+
+    if [[ " ${IGNORE_BRANCHES[@]} " =~ " ${TARGET_BRANCH} " ]]; then
+        echo "Branche '$TARGET_BRANCH' ignorée."
+        continue
+    fi
+
+    echo "Traitement de la branche : $TARGET_BRANCH"
     
-    # Checkout the target branch and make sure it's up-to-date
+    # Basculer sur la branche cible et s'assurer qu'elle est à jour
     git checkout "$TARGET_BRANCH"
     git pull origin "$TARGET_BRANCH"
     
-    # Attempt to cherry-pick the commit
-    git cherry-pick "$SOURCE_COMMIT"
+    # Tenter le cherry-pick du dernier commit
+    git cherry-pick "$LAST_COMMIT"
     
-    # Check if there was a conflict
+    # Vérifier s'il y a un conflit
     if [ $? -ne 0 ]; then
-        echo "Merge conflict detected in branch: $TARGET_BRANCH"
-        echo "Please resolve the conflict manually."
+        echo "Conflit de fusion détecté sur la branche : $TARGET_BRANCH"
+        echo "Veuillez résoudre le conflit manuellement."
         exit 1
     fi
 
-    # Push the changes to the target branch
+    # Pousser les modifications sur la branche cible
     git push origin "$TARGET_BRANCH"
 done
 
-# Checkout back to the source branch
+# Revenir à la branche de départ
 git checkout "$SOURCE_BRANCH"
 
-echo "Cherry-pick completed successfully for all branches."
+echo "Cherry-pick terminé avec succès pour toutes les branches."
