@@ -8,29 +8,29 @@ stages:
       .svs --rel_path slides --remote_rel_path .
     outs:
     - path: .downloaded_slides.csv
-      md5: 45c29e07f7391f89ca9662a6332a4969
-      size: 530
+      md5: 82005b91aae828cc9ae1ecdd5bdddc6d
+      size: 706
   mask_extraction:
     cmd: python register_extract_polygons_masks_mp.py --data_path /data/anapath/AprioricsSlides
       --ihc_type P40ColIV --mapping_file ../../ihc_mapping.json --mask_extension .tif
       --remote_path /media/AprioricsSlides --slide_extension .svs --dab_thr 0.015
       --object_min-size 50 --binary_op none --num_workers 20 --iou_thr 0.05 --nuc_max_siz
       40 --mask_path masks --main_slide_path slides --slide_path slides_tmp --geojson_path
-      geojsons --log_path registration_geojsons --hovernet_path hovernet_geojsons
+      geojsons --log_path registration_geojsons --hovernet_path hovernet_gpkgs
     deps:
     - path: .downloaded_slides.csv
-      md5: 45c29e07f7391f89ca9662a6332a4969
-      size: 530
+      md5: 82005b91aae828cc9ae1ecdd5bdddc6d
+      size: 706
     outs:
     - path: /data/anapath/AprioricsSlides/geojsons/P40ColIV
-      md5: 08f3fd60cfe66101556a2ccc6432e0f1.dir
-      size: 38923464
-      nfiles: 3
+      md5: 77ac47b3ea1f04538ab9963a174e9464.dir
+      size: 38998311
+      nfiles: 4
     - path: /data/anapath/AprioricsSlides/masks/P40ColIV
-      md5: 121c49181954513e17a805137ddd9b37.dir
-      size: 1735937153
-      nfiles: 3
+      md5: df0041354107844edc704545e387967c.dir
+      size: 2224333104
+      nfiles: 4
     - path: /data/anapath/AprioricsSlides/registration_geojsons/P40ColIV
-      md5: e70185580cd8e6edb62e88edaae5e1b2.dir
-      size: 24859
-      nfiles: 3
+      md5: 838a63c0ceb8113021fd8a360f544b29.dir
+      size: 32122
+      nfiles: 4
