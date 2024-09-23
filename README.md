@@ -160,9 +160,9 @@ It takes as inputs the slides provided as well as their annotations (annotated p
 python kartezio_data_pipeline.py
 ```
 
-First, put the annotated data in a usable format.
-Then extract the thumbnails of each annotated element, to prepare the manual annotation for kartezio. Once this is done, a manual annotation phase is neeeded. The general idea is to produce a `roi` file containing a drawing around the mitosis to detect (either on HE or IHC).
-Finally, split the dataset into training/testing and output `dataset.csv` needed for kartezio.
+First, the script puts the annotated data in a usable format.
+Then it extracts the thumbnails of each annotated element, to prepare the manual annotation for kartezio. Once this is done, a manual annotation phase is neeeded. The general idea is to produce a `roi` file containing a drawing around the mitosis to detect (either on HE or IHC).
+Finally, it splits the dataset into training/testing and output `dataset.csv` needed for kartezio.
 
 3 - Training
 
