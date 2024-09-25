@@ -8,7 +8,8 @@ base:
 
 local:
   mask_path: masks
-  slide_path: slides
+  main_slide_path: slides
+  slide_path: slides_tmp
   wkt_path: wkts
   geojson_path: geojsons
   log_path: registration_geojsons
