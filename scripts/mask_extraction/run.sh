@@ -13,6 +13,9 @@ conda activate apriorics
 for file_path in $he_slide_folder/*.svs; do
   filename=$(basename $file_path)
   filestem=${filename%.*}
+  if [ $filestem = "21I000437" ] || [ $filestem = "21I000368" ] || [ $filestem = "21I000668" ]; then
+    continue
+  fi
   outfile=$outfolder/$filestem$mask_extension
   if [ -f $outfile ]; then
     continue
