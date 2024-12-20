@@ -45,10 +45,10 @@ patches:
   export_geojson: true
 
 train:
-  patch_size: 224
+  patch_size: 500
   level: 0
   gpu: 0
-  batch_size: 32
+  batch_size: 16
   lr: 2e-4
   wd: 0.1
   epochs: 5
@@ -57,7 +57,7 @@ train:
   model: unet/resnet50
   loss: bce
   fold: 0
-  p_pos: 0.8
+  p_pos: 0.7
   data_step: 1
   data_type: segmentation
   augment_stain: true
