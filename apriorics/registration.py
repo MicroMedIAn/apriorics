@@ -363,9 +363,13 @@ def get_coord_transform(
     thumb_ihc, mask_ihc = get_dot_mask(slide_ihc, thumb_level=thumb_level)
     centroid_he = get_centroid(thumb_he)
     centroid_ihc = get_centroid(thumb_ihc)
-    rot, scale, trans = get_affine_transform(
+    res = get_affine_transform(
         mask_ihc, mask_he, centroid_ihc, centroid_he
     )
+    if res is None:
+        return
+    else:
+        rot, scale, trans = res
     dsr = slide_he.dimensions[1] / mask_he.shape[0]
     trans[:2, 2] *= dsr
     affine = trans @ scale @ rot

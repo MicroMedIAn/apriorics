@@ -218,8 +218,9 @@ def register_extract_mask(args, patch_gdf):
 
     try:
         coord_tfm = get_coord_transform(slide_he, slide_ihc)
+        if coord_tfm is None:
+            return
     except IndexError:
-
         def coord_tfm(x, y):
             return Coord(x, y)
 
@@ -423,6 +424,9 @@ def main(args):
                 p_w, p_h = patch.size
                 patch_polygons.append(box(x, y, x + p_w, y + p_h))
                 obj_polygons.append(polygon)
+        
+        if not obj_polygons:
+            return
 
         logfile = logfolder / hefile.relative_to(slidefolder).with_suffix(".geojson")
         if not logfile.parent.exists():
