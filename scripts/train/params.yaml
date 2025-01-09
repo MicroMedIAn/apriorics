@@ -15,6 +15,7 @@ local:
   train_path: train
   evaluate_path: evaluate
   reg_path: registration_geojsons
+  hovernet_path: hovernet_gpkgs
 
 remote:
   mask_path: masks
@@ -61,4 +62,7 @@ train:
   fold: 0
 
 evaluate:
-  area_threshold: 50
+  area_threshold: 100
+  test_fold: test
+  flood_mask: false
+  iou_threshold: 0.5
