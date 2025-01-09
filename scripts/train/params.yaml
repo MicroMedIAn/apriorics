@@ -14,6 +14,7 @@ local:
   train_path: train
   evaluate_path: evaluate
   reg_path: registration_geojsons
+  hovernet_path: hovernet_gpkgs
 
 remote:
   mask_path: masks
@@ -45,10 +46,10 @@ patches:
   export_geojson: true
 
 train:
-  patch_size: 500
+  patch_size: 224
   level: 0
   gpu: 0
-  batch_size: 16
+  batch_size: 32
   lr: 2e-4
   wd: 0.1
   epochs: 5
@@ -68,3 +69,4 @@ evaluate:
   area_threshold: 100
   test_fold: test
   flood_mask: false
+  iou_threshold: 0.5

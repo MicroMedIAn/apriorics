@@ -101,12 +101,32 @@ stages:
       - ${base.data_path}/${local.evaluate_path}/${base.ihc_type}/:
           persist: true
 
+  get_fp_fn_geojsons:
+    cmd: >-
+      python get_fp_fn_geojsons.py
+      --hash_file .model_hash.yaml
+      --evalfolder ${base.data_path}/${local.evaluate_path}
+      --gtfolder ${base.data_path}/${local.geojson_path}
+      --hovernetfolder ${base.data_path}/${local.hovernet_path}
+      --trainfolder ${base.data_path}/${local.train_path}
+      --regfolder ${base.data_path}/${local.reg_path}
+      ${base}
+      ${train}
+      ${evaluate}
+    deps:
+      - .model_hash.yaml
+      - ${base.data_path}/${local.evaluate_path}/${base.ihc_type}/
+      - ${base.data_path}/${local.train_path}/${base.ihc_type}/${train.patch_size}_${patches.level}/patch_geojsons
+      - ${base.data_path}/${local.reg_path}/${base.ihc_type}
+    outs:
+      - .fp_fn_done
+
   evaluate_upload:
     cmd: >-
       rsync -avu
       ${base.data_path}/${local.evaluate_path}/${base.ihc_type}/
       ${base.remote_path}/${remote.evaluate_path}/${base.ihc_type}/
     deps:
-      - ${base.data_path}/${local.evaluate_path}/${base.ihc_type}/
+      - .fp_fn_done
 
     
