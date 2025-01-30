@@ -397,7 +397,7 @@ def _get_raw_concentrations(src_stain_coeff, absorbance):
     ) @ src_stain_coeff.transpose(-1, -2)
     if torch.any(torch.isnan(coeff_pinv)):
         # fall back to cp.linalg.lstsq if pseudo-inverse above failed
-        conc_raw = torch.linalg.lstsq(src_stain_coeff, absorbance, rcond=None)[0]
+        return None
     else:
         conc_raw = coeff_pinv @ absorbance
 
@@ -492,6 +492,8 @@ class StainAugmentor(nn.Module):
         )
 
         HE = _get_raw_concentrations(stain_matrix, absorbance)
+        if HE is None:
+            return x / 255
         stain_matrix = params["stain_matrix"]
         HE = torch.where(HE > 0.2, (HE * alpha[..., None] + beta[..., None]), HE)
         out = _normalized_from_concentrations(HE, stain_matrix, 240, x.shape, 0)
