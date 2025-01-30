@@ -3,15 +3,39 @@
 # Définir la branche de départ et les branches cibles directement dans le script
 TARGET_BRANCHES=("master" "ae1ae3" "phh3" "ERGPodoplanine" "P40ColIV" "cd3cd20")  # Liste des branches cibles
 
-IGNORE_BRANCHES=("$@")
+# Function to display usage
+usage() {
+    echo "Usage: $0 [--commit <commit-hash>] [branches-to-ignore...]"
+    exit 1
+}
+
+# Parse command-line arguments
+COMMIT_HASH=""
+IGNORE_BRANCHES=()
+
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        --commit)
+            COMMIT_HASH="$2"
+            shift 2
+            ;;
+        *)
+            IGNORE_BRANCHES+=("$1")
+            shift
+            ;;
+    esac
+done
+
 # Obtenir la branche actuelle
 SOURCE_BRANCH=$(git rev-parse --abbrev-ref HEAD)
 
-# Obtenir le dernier commit de la branche de départ
-LAST_COMMIT=$(git rev-parse HEAD)
+# Définir le commit à utiliser (soit celui fourni, soit le dernier commit de la branche actuelle)
+if [ -z "$COMMIT_HASH" ]; then
+    COMMIT_HASH=$(git rev-parse HEAD)
+fi
 
 echo "Branche de départ : $SOURCE_BRANCH"
-echo "Dernier commit : $LAST_COMMIT"
+echo "Commit à appliquer : $COMMIT_HASH"
 
 # Fetch les dernières informations des branches distantes
 git fetch origin
@@ -35,8 +59,8 @@ for TARGET_BRANCH in "${TARGET_BRANCHES[@]}"; do
     git checkout "$TARGET_BRANCH"
     git pull origin "$TARGET_BRANCH"
     
-    # Tenter le cherry-pick du dernier commit
-    git cherry-pick "$LAST_COMMIT"
+    # Tenter le cherry-pick du commit spécifié
+    git cherry-pick "$COMMIT_HASH"
     
     # Vérifier s'il y a un conflit
     if [ $? -ne 0 ]; then
