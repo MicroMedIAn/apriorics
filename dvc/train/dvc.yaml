@@ -1,7 +1,7 @@
 stages:
   slide_download:
     cmd: >-
-      python ../utils/file_transfer.py
+      python ../../../scripts/utils/file_transfer.py
       --out_csv .downloaded_slides.csv
       ${base}
       ${slide_download}
@@ -15,7 +15,7 @@ stages:
 
   split_dataset:
     cmd: >-
-      python split_full_dataset.py
+      python ../../../scripts/train/split_full_dataset.py
       --out_csv ${base.data_path}/${local.train_path}/${split.filename}
       --locked_test_file ${base.data_path}/${local.train_path}/${split.locked_test_filename}
       ${base}
@@ -26,7 +26,7 @@ stages:
 
   generate_patch_csvs:
     cmd: >-
-      python generate_patch_dataset.py
+      python ../../../scripts/train/generate_patch_dataset.py
       ${base}
       ${patches}
       --slidefolder ${base.data_path}/${local.slide_path}
@@ -42,7 +42,7 @@ stages:
 
   train:
     cmd: >-
-      python train_segmentation.py
+      python ../../../scripts/train/train_segmentation.py
       --hash_file .model_hash.yaml
       ${base}
       ${train}
@@ -62,7 +62,7 @@ stages:
 
   generate_patch_csvs_eval:
     cmd: >-
-      python generate_patch_dataset.py
+      python ../../../scripts/train/generate_patch_dataset.py
       ${base}
       --level ${patches.level}
       --overlap ${patches.overlap}
@@ -83,7 +83,7 @@ stages:
 
   evaluate:
     cmd: >-
-      python predict_export_geojsons.py
+      python ../../../scripts/train/predict_export_geojsons.py
       --hash_file .model_hash.yaml
       --outfolder ${base.data_path}/${local.evaluate_path}
       --slidefolder ${base.data_path}/${local.slide_path}
@@ -103,7 +103,7 @@ stages:
 
   get_fp_fn_geojsons:
     cmd: >-
-      python get_fp_fn_geojsons.py
+      python ../../../scripts/train/get_fp_fn_geojsons.py
       --hash_file .model_hash.yaml
       --evalfolder ${base.data_path}/${local.evaluate_path}
       --gtfolder ${base.data_path}/${local.geojson_path}

@@ -1,0 +1,46 @@
+schema: '2.0'
+stages:
+  slide_download:
+    cmd: python ../../../scripts/utils/file_transfer.py --out_csv .downloaded_slides.csv --data_path
+      /data/anapath/AprioricsSlides --ihc_type CD3CD20 --mapping_file ../../../ihc_mapping.json
+      --mask_extension .tif --remote_path /media/AprioricsSlides --slide_extension
+      .svs --import_ihc --add_tree --import_file .cd3cd20 --extension .svs --rel_path
+      slides --remote_rel_path .
+    outs:
+    - path: .downloaded_slides.csv
+      md5: 1d25b76252285531a1b0863a65c24b2b
+      size: 27764
+  mask_extraction:
+    cmd: python ../../../scripts/mask_extraction/register_extract_polygons_masks_mp.py --data_path /data/anapath/AprioricsSlides
+      --ihc_type CD3CD20 --mapping_file ../../../ihc_mapping.json --mask_extension .tif
+      --remote_path /media/AprioricsSlides --slide_extension .svs --dab_thr 0.01 --object_min_size
+      100 --binary_op closing --radius 5 --nuc_min_size 0 --nuc_max_size 24 --num_workers
+      30 --mask_path masks --main_slide_path slides --slide_path slides_tmp --geojson_path
+      geojsons --log_path registration_geojsons --hovernet_path hovernet_gpkgs
+    deps:
+    - path: .downloaded_slides.csv
+      md5: 1d25b76252285531a1b0863a65c24b2b
+      size: 27764
+    outs:
+    - path: /data/anapath/AprioricsSlides/geojsons/CD3CD20
+      md5: f7361f4498cceea04ad58747693c8add.dir
+      size: 5903768940
+      nfiles: 155
+    - path: /data/anapath/AprioricsSlides/masks/CD3CD20
+      md5: 9a13e8d8c36a5cda2699b715458214a7.dir
+      size: 103479695733
+      nfiles: 155
+    - path: /data/anapath/AprioricsSlides/registration_geojsons/CD3CD20
+      md5: 596959f093b950395d4e4b8c69695472.dir
+      size: 1453010
+      nfiles: 155
+  geojson_upload:
+    cmd: python ../../../scripts/utils/file_transfer.py --data_path /media/AprioricsSlides --remote_path
+      /data/anapath/AprioricsSlides --ihc_type CD3CD20 --mapping_file ../../../ihc_mapping.json
+      --recurse --extension .geojson --rel_path geojsons --remote_rel_path geojsons
+      --add_tree
+    deps:
+    - path: /data/anapath/AprioricsSlides/geojsons/CD3CD20
+      md5: f7361f4498cceea04ad58747693c8add.dir
+      size: 5903768940
+      nfiles: 155

@@ -1,0 +1,42 @@
+schema: '2.0'
+stages:
+  slide_download:
+    cmd: python ../../../scripts/utils/file_transfer.py --out_csv .downloaded_slides.csv --data_path
+      /data/anapath/AprioricsSlides --ihc_type ERGPodoplanine --mapping_file ../../../ihc_mapping.json
+      --mask_extension .tif --remote_path /media/AprioricsSlides --slide_extension
+      .svs --clean_previous --import_ihc --add_tree --extension .svs --rel_path slides
+      --remote_rel_path .
+    outs:
+    - path: .downloaded_slides.csv
+      md5: a9cd34b77800068fa1ad8eff1ce98fb9
+      size: 134370
+  mask_extraction:
+    cmd: python ../../../scripts/mask_extraction/register_extract_polygons_masks_mp.py --data_path /data/anapath/AprioricsSlides
+      --ihc_type ERGPodoplanine --mapping_file ../../../ihc_mapping.json --mask_extension
+      .tif --remote_path /media/AprioricsSlides --slide_extension .svs --dab_thr 0.015
+      --object_min-size 50 --binary_op none --num_workers 20 --no_he --mask_path masks
+      --slide_path slides --wkt_path wkts --geojson_path geojsons --log_path registration_geojsons
+    deps:
+    - path: .downloaded_slides.csv
+      md5: d49b1864afb6af8ff19340cc1f7cfdf3
+      size: 215255
+    outs:
+    - path: /data/anapath/AprioricsSlides/geojsons/ERGPodoplanine
+      md5: 1615238cd5e7b452c8d3fc70b547dd61.dir
+      size: 2252755076
+      nfiles: 36
+    - path: /data/anapath/AprioricsSlides/masks/ERGPodoplanine
+      md5: bc8276cbedb91e00619f86d3b4133b6b.dir
+      size: 25838450448
+      nfiles: 36
+      nfiles: 4
+  geojson_upload:
+    cmd: python ../../../scripts/utils/file_transfer.py --data_path /media/AprioricsSlides --remote_path
+      /data/anapath/AprioricsSlides --ihc_type ERGPodoplanine --mapping_file ../../../ihc_mapping.json
+      --recurse --extension .geojson --rel_path geojsons --remote_rel_path geojsons
+      --add_tree
+    deps:
+    - path: /data/anapath/AprioricsSlides/geojsons/ERGPodoplanine
+      md5: 1615238cd5e7b452c8d3fc70b547dd61.dir
+      size: 2252755076
+      nfiles: 36

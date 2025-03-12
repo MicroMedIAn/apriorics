@@ -138,5 +138,6 @@ pathaia/
 
 .downloaded_slides.csv
 .model_hash*.yaml
+.fp_fn_done
 
 *.ipynb

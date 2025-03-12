@@ -1,7 +1,7 @@
 stages:
   slide_download:
     cmd: >-
-      python ../utils/file_transfer.py
+      python ../../../scripts/utils/file_transfer.py
       --out_csv .downloaded_slides.csv
       ${base}
       ${slide_download}
@@ -15,7 +15,7 @@ stages:
 
   mask_extraction:
     cmd: >-
-      python register_extract_polygons_masks_mp.py
+      python ../../../scripts/mask_extraction/register_extract_polygons_masks_mp.py
       ${base}
       ${mask_extraction}
       ${local}
@@ -31,7 +31,7 @@ stages:
 
   geojson_upload:
     cmd: >-
-      python ../utils/file_transfer.py
+      python ../../../scripts/utils/file_transfer.py
       --data_path ${base.remote_path}
       --remote_path ${base.data_path}
       --ihc_type ${base.ihc_type}

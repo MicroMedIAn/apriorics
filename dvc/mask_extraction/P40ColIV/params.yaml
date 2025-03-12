@@ -1,7 +1,7 @@
 base:
   data_path: /data/anapath/AprioricsSlides
-  ihc_type: PHH3
-  mapping_file: ../../ihc_mapping.json
+  ihc_type: P40ColIV
+  mapping_file: ../../../ihc_mapping.json
   mask_extension: .tif
   remote_path: /media/AprioricsSlides
   slide_extension: .svs
@@ -10,7 +10,6 @@ local:
   mask_path: masks
   main_slide_path: slides
   slide_path: slides_tmp
-  wkt_path: wkts
   geojson_path: geojsons
   log_path: registration_geojsons
   hovernet_path: hovernet_gpkgs
@@ -18,15 +17,19 @@ local:
 remote:
   mask_path: masks
   slide_path: .
-  wkt_path: wkts
   geojson_path: geojsons
 
 slide_download:
   clean_previous: true
   import_ihc: true
   add_tree: true
+  import_file: .P40ColIV
+
 
 mask_extraction:
-  dab_thr: 0.04
-  object_min_size: 50
+  dab_thr: 0.015
+  object_min-size: 50
   binary_op: none
+  num_workers: 20 
+  iou_thr: 0.05
+  nuc_max_siz: 40

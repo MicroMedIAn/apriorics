@@ -1,0 +1,66 @@
+base:
+  data_path: /data/anapath/AprioricsSlides
+  ihc_type: P40ColIV
+  mapping_file: ../../../ihc_mapping.json
+  mask_extension: .tif
+  remote_path: /media/AprioricsSlides
+  slide_extension: .svs
+  seed: 42
+
+local:
+  mask_path: masks
+  slide_path: slides
+  geojson_path: geojsons
+  train_path: train
+  evaluate_path: evaluate
+  reg_path: registration_geojsons
+  hovernet_path: hovernet_gpkgs
+
+remote:
+  mask_path: masks
+  slide_path: .
+  geojson_path: geojsons
+  train_path: train
+  evaluate_path: evaluate
+
+slide_download:
+  clean_previous: true
+  import_ihc: false
+  add_tree: true
+
+split:
+  nfolds: 5
+  test_ratio: 0.1
+  update: true
+  filename: splits.csv
+  locked_test_filename: pam50_slides.txt
+  min_slide: 4
+  max_slide: 1288
+
+patches:
+  patch_size: 256
+  level: 0
+  overlap: 0.1
+  filter_pos: 0
+  overwrite: true
+  export_geojson: true
+
+train:
+  patch_size: 224
+  level: 0
+  gpu: 0
+  batch_size: 32
+  lr: 2e-4
+  wd: 0.01
+  epochs: 20
+  num_workers: 32
+  scheduler: one-cycle
+  model: unet/resnet50
+  loss: bce
+  fold: 0
+
+evaluate:
+  area_threshold: 100
+  test_fold: test
+  flood_mask: false
+  iou_threshold: 0.5
