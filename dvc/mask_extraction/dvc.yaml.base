@@ -24,10 +24,13 @@ stages:
     outs:
       - ${base.data_path}/${local.mask_path}/${base.ihc_type}:
           persist: true
+          cache: false
       - ${base.data_path}/${local.geojson_path}/${base.ihc_type}:
           persist: true
+          cache: false
       - ${base.data_path}/${local.log_path}/${base.ihc_type}:
           persist: true
+          cache: false
 
   geojson_upload:
     cmd: >-

@@ -13,17 +13,6 @@ stages:
           persist: true
     always_changed: true
 
-  split_dataset:
-    cmd: >-
-      python ../../../scripts/train/split_full_dataset.py
-      --out_csv ${base.data_path}/${local.train_path}/${split.filename}
-      --locked_test_file ${base.data_path}/${local.train_path}/${split.locked_test_filename}
-      ${base}
-      ${split}
-    outs:
-      - ${base.data_path}/${local.train_path}/${split.filename}:
-          persist: true
-
   generate_patch_csvs:
     cmd: >-
       python ../../../scripts/train/generate_patch_dataset.py
@@ -39,6 +28,7 @@ stages:
     outs:
       - ${base.data_path}/${local.train_path}/${base.ihc_type}/${patches.patch_size}_${patches.level}/patch_csvs:
           persist: true
+          cache: false
 
   train:
     cmd: >-
@@ -57,8 +47,9 @@ stages:
     outs:
       - .model_hash.yaml:
           persist: true
-      - ${base.data_path}/${local.train_path}/logs:
+      - ${base.data_path}/${local.train_path}/logs/${base.ihc_type}/apriorics:
           persist: true
+          cache: false
 
   generate_patch_csvs_eval:
     cmd: >-
@@ -80,6 +71,7 @@ stages:
     outs:
       - ${base.data_path}/${local.train_path}/${base.ihc_type}/${train.patch_size}_${patches.level}/patch_csvs:
           persist: true
+          cache: false
 
   evaluate:
     cmd: >-
@@ -95,11 +87,12 @@ stages:
       ${evaluate}
     deps:
       - .model_hash.yaml
-      - ${base.data_path}/${local.train_path}/logs
+      - ${base.data_path}/${local.train_path}/logs/${base.ihc_type}/apriorics
       - ${base.data_path}/${local.train_path}/${base.ihc_type}/${train.patch_size}_${patches.level}/patch_csvs
     outs:
       - ${base.data_path}/${local.evaluate_path}/${base.ihc_type}/:
           persist: true
+          cache: false
 
   get_fp_fn_geojsons:
     cmd: >-
@@ -119,7 +112,7 @@ stages:
       - ${base.data_path}/${local.train_path}/${base.ihc_type}/${train.patch_size}_${patches.level}/patch_geojsons
       - ${base.data_path}/${local.reg_path}/${base.ihc_type}
     outs:
-      - .fp_fn_done
+      - .fp_fn_done.yaml
 
   evaluate_upload:
     cmd: >-
@@ -127,6 +120,6 @@ stages:
       ${base.data_path}/${local.evaluate_path}/${base.ihc_type}/
       ${base.remote_path}/${remote.evaluate_path}/${base.ihc_type}/
     deps:
-      - .fp_fn_done
+      - .fp_fn_done.yaml
 
     
