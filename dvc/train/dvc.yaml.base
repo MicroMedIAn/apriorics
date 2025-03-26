@@ -1,0 +1,132 @@
+stages:
+  slide_download:
+    cmd: >-
+      python ../../../scripts/utils/file_transfer.py
+      --out_csv .downloaded_slides.csv
+      ${base}
+      ${slide_download}
+      --extension ${base.slide_extension}
+      --rel_path ${local.slide_path}
+      --remote_rel_path ${remote.slide_path}
+    outs:
+      - .downloaded_slides.csv:
+          persist: true
+    always_changed: true
+
+  split_dataset:
+    cmd: >-
+      python ../../../scripts/train/split_full_dataset.py
+      --out_csv ${base.data_path}/${local.train_path}/${split.filename}
+      --locked_test_file ${base.data_path}/${local.train_path}/${split.locked_test_filename}
+      ${base}
+      ${split}
+    outs:
+      - ${base.data_path}/${local.train_path}/${split.filename}:
+          persist: true
+
+  generate_patch_csvs:
+    cmd: >-
+      python ../../../scripts/train/generate_patch_dataset.py
+      ${base}
+      ${patches}
+      --slidefolder ${base.data_path}/${local.slide_path}
+      --maskfolder ${base.data_path}/${local.mask_path}
+      --outfolder ${base.data_path}/${local.train_path}
+      
+    deps:
+      - .downloaded_slides.csv
+      - ${base.data_path}/${local.mask_path}/${base.ihc_type}
+    outs:
+      - ${base.data_path}/${local.train_path}/${base.ihc_type}/${patches.patch_size}_${patches.level}/patch_csvs:
+          persist: true
+
+  train:
+    cmd: >-
+      python ../../../scripts/train/train_segmentation.py
+      --hash_file .model_hash.yaml
+      ${base}
+      ${train}
+      --splitfile ${split.filename}
+      --base_size ${patches.patch_size}
+      --slidefolder ${base.data_path}/${local.slide_path}
+      --maskfolder ${base.data_path}/${local.mask_path}
+      --trainfolder ${base.data_path}/${local.train_path}
+    deps:
+      - ${base.data_path}/${local.train_path}/${base.ihc_type}/${patches.patch_size}_${patches.level}/patch_csvs
+      - ${base.data_path}/${local.train_path}/${split.filename}
+    outs:
+      - .model_hash.yaml:
+          persist: true
+      - ${base.data_path}/${local.train_path}/logs:
+          persist: true
+
+  generate_patch_csvs_eval:
+    cmd: >-
+      python ../../../scripts/train/generate_patch_dataset.py
+      ${base}
+      --level ${patches.level}
+      --overlap ${patches.overlap}
+      --overwrite ${patches.overwrite}
+      --export_geojson ${patches.export_geojson}
+      --patch_size ${train.patch_size}
+      --slidefolder ${base.data_path}/${local.slide_path}
+      --maskfolder ${base.data_path}/${local.mask_path}
+      --outfolder ${base.data_path}/${local.train_path}
+      --regfolder ${base.data_path}/${local.reg_path}
+      
+    deps:
+      - .downloaded_slides.csv
+      - ${base.data_path}/${local.mask_path}/${base.ihc_type}
+    outs:
+      - ${base.data_path}/${local.train_path}/${base.ihc_type}/${train.patch_size}_${patches.level}/patch_csvs:
+          persist: true
+
+  evaluate:
+    cmd: >-
+      python ../../../scripts/train/predict_export_geojsons.py
+      --hash_file .model_hash.yaml
+      --outfolder ${base.data_path}/${local.evaluate_path}
+      --slidefolder ${base.data_path}/${local.slide_path}
+      --maskfolder ${base.data_path}/${local.mask_path}
+      --trainfolder ${base.data_path}/${local.train_path}
+      --splitfile ${split.filename}
+      ${base}
+      ${train}
+      ${evaluate}
+    deps:
+      - .model_hash.yaml
+      - ${base.data_path}/${local.train_path}/logs
+      - ${base.data_path}/${local.train_path}/${base.ihc_type}/${train.patch_size}_${patches.level}/patch_csvs
+    outs:
+      - ${base.data_path}/${local.evaluate_path}/${base.ihc_type}/:
+          persist: true
+
+  get_fp_fn_geojsons:
+    cmd: >-
+      python ../../../scripts/train/get_fp_fn_geojsons.py
+      --hash_file .model_hash.yaml
+      --evalfolder ${base.data_path}/${local.evaluate_path}
+      --gtfolder ${base.data_path}/${local.geojson_path}
+      --hovernetfolder ${base.data_path}/${local.hovernet_path}
+      --trainfolder ${base.data_path}/${local.train_path}
+      --regfolder ${base.data_path}/${local.reg_path}
+      ${base}
+      ${train}
+      ${evaluate}
+    deps:
+      - .model_hash.yaml
+      - ${base.data_path}/${local.evaluate_path}/${base.ihc_type}/
+      - ${base.data_path}/${local.train_path}/${base.ihc_type}/${train.patch_size}_${patches.level}/patch_geojsons
+      - ${base.data_path}/${local.reg_path}/${base.ihc_type}
+    outs:
+      - .fp_fn_done
+
+  evaluate_upload:
+    cmd: >-
+      rsync -avu
+      ${base.data_path}/${local.evaluate_path}/${base.ihc_type}/
+      ${base.remote_path}/${remote.evaluate_path}/${base.ihc_type}/
+    deps:
+      - .fp_fn_done
+
+    
