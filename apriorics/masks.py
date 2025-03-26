@@ -261,59 +261,6 @@ def get_mask_PHH3(he: Union[Image, NDImage], ihc: Union[Image, NDImage]) -> NDBo
     return mask
 
 
-def get_mask_CD3CD20_old(
-    he: Union[Image, NDImage], ihc: Union[Image, NDImage]
-) -> NDBoolMask:
-    r"""
-    Compute mask on paired PHH3 immunohistochemistry and H&E images.
-
-    Args:
-        he: input H&E image. Mask is computed using a threshold on H channel.
-        ihc: input immunohistochemistry image. Mask is computed using a threshold on
-            DAB channel.
-
-    Returns:
-        Intersection of H&E and IHC masks.
-    """
-    he = np.asarray(he)
-    he_H = rgb2hed(he)
-    he_DAB = he_H[:, :, 2]
-    he_H = he_H[:, :, 0]
-    he_hue = rgb2hsv(he)[:, :, 0]
-    ihc = np.asarray(ihc)
-    ihc_DAB = rgb2hed(ihc)[:, :, 2]
-    ihc_s = rgb2hsv(ihc)[:, :, 1]
-
-    mask_he1 = (he_H > 0.05) & (he_H < 0.14) & (he_hue > 0.67)
-    mask_he2 = get_mask_ink(he)
-
-    mask_he = remove_small_objects(
-        remove_small_holes(
-            binary_closing(mask_he1 & ~mask_he2, footprint=disk(2)), area_threshold=300
-        ),
-        min_size=100,
-    )
-
-    mask_ihc = remove_small_objects(
-        remove_small_holes(
-            binary_closing((ihc_DAB > 0.01) & (ihc_s > 0.01), footprint=disk(2)),
-            area_threshold=300,
-        ),
-        min_size=100,
-    )
-
-    mask_he_DAB = remove_small_objects(
-        remove_small_holes(
-            binary_closing(he_DAB > 0.03, footprint=disk(2)), area_threshold=300
-        ),
-        min_size=100,
-    )
-
-    mask = remove_small_objects(mask_he & mask_ihc & ~mask_he_DAB, min_size=100)
-
-    return mask
-
-
 def get_mask_CD3CD20(
     he: Union[Image, NDImage], ihc: Union[Image, NDImage]
 ) -> NDBoolMask:
