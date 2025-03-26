@@ -23,7 +23,7 @@ slide_download:
   clean_previous: false
   import_ihc: true
   add_tree: true
-  import_file: .cd3cd20
+  import_file: ../../../file_lists/cd3cd20
 
 mask_extraction:
   dab_thr: 0.01

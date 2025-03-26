@@ -261,7 +261,7 @@ if __name__ == "__main__":
     patch_csv_folder = trainfolder / f"{args.base_size}_{args.level}/patch_csvs"
     maskfolder = args.maskfolder / args.ihc_type / "HE"
     slidefolder = args.slidefolder / args.ihc_type / "HE"
-    logfolder = args.trainfolder / "logs"
+    logfolder = args.trainfolder / "logs" / args.ihc_type
 
     patches_paths = get_files(
         patch_csv_folder, extensions=".csv", recurse=False
@@ -355,9 +355,9 @@ if __name__ == "__main__":
         wd=args.wd,
         scheduler_func=scheduler_func,
         metrics=metrics,
-        stain_augmentor=StainAugmentor(p=args.p_augment)
-        if args.augment_stain
-        else None,
+        stain_augmentor=(
+            StainAugmentor(p=args.p_augment) if args.augment_stain else None
+        ),
         dl_lengths=(len(train_dl), len(val_dl)),
     )
 

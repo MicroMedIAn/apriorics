@@ -6,5 +6,5 @@
 ['remote "cache"']
     url = /data/anapath/AprioricsSlides/.cache
 [cache]
-    local = cache
+    dir = /data/anapath/AprioricsSlides/.cache
     type = hardlink,symlink

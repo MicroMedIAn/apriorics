@@ -58,6 +58,11 @@ parser.add_argument(
     help="Minimum iou of objects to keep. Default 50%.",
 )
 parser.add_argument("--fold", default="0", help="Fold used for validation. Default 0.")
+parser.add_argument(
+    "--done_file",
+    type=Path,
+    help="File to store version hash and specify that process is done. Optional",
+)
 
 
 if __name__ == "__main__":
@@ -160,4 +165,6 @@ if __name__ == "__main__":
         f.write(f"Mean VPP: {prec*100:.2f}%\n")
         f.write(f"Mean Sensitivity: {rec*100:.2f}%\n")
 
-    (Path.cwd() / ".fp_fn_done").touch()
+    if args.done_file is not None:
+        with open(args.done_file, "w") as f:
+            yaml.dump({args.fold: version}, f)

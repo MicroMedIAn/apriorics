@@ -27,15 +27,7 @@ slide_download:
   clean_previous: true
   import_ihc: false
   add_tree: true
-
-split:
-  nfolds: 5
-  test_ratio: 0.1
-  update: true
-  filename: splits.csv
-  locked_test_filename: pam50_slides.txt
-  min_slide: 4
-  max_slide: 1288
+  import_file: ../../../file_lists/CD3CD20
 
 patches:
   patch_size: 512
@@ -44,6 +36,9 @@ patches:
   filter_pos: 0
   overwrite: true
   export_geojson: true
+
+split:
+  filename: splits.csv
 
 train:
   patch_size: 224

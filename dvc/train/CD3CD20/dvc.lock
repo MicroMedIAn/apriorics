@@ -4,8 +4,8 @@ stages:
     cmd: python ../../../scripts/utils/file_transfer.py --out_csv .downloaded_slides.csv
       --data_path /data/anapath/AprioricsSlides --ihc_type CD3CD20 --mapping_file
       ../../../ihc_mapping.json --mask_extension .tif --remote_path /media/AprioricsSlides
-      --slide_extension .svs --seed 42 --clean_previous --add_tree --extension .svs
-      --rel_path slides --remote_rel_path .
+      --slide_extension .svs --seed 42 --clean_previous --add_tree --import_file ../../../file_lists/CD3CD20
+      --extension .svs --rel_path slides --remote_rel_path .
     outs:
     - path: .downloaded_slides.csv
       hash: md5

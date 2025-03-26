@@ -177,7 +177,7 @@ if __name__ == "__main__":
     patch_csv_folder = trainfolder / f"{args.patch_size}_{args.level}/patch_csvs"
     slidefolder = args.slidefolder / args.ihc_type / "HE"
     maskfolder = args.maskfolder / args.ihc_type / "HE"
-    logfolder = args.trainfolder / "logs"
+    logfolder = args.trainfolder / "logs" / args.ihc_type
 
     with open(args.hash_file, "r") as f:
         version = yaml.safe_load(f)[args.fold]
