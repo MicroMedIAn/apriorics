@@ -1,0 +1,54 @@
+base:
+  data_path: ../data
+  ihc_type: ERGPodoplanine
+  mapping_file: ../../../ihc_mapping.json
+  mask_extension: .tif
+  remote_path: /media/AprioricsSlides
+  seed: 42
+  slide_extension: .svs
+  split_file: ../../../splits.csv
+evaluate:
+  area_threshold: 100
+  flood_mask: false
+  iou_threshold: 0.5
+  test_fold: test
+local:
+  evaluate_path: evaluate
+  geojson_path: geojsons
+  hovernet_path: hovernet_gpkgs
+  mask_path: masks
+  reg_path: registration_geojsons
+  slide_path: slides
+  train_path: train
+  wkt_path: wkts
+patches:
+  export_geojson: true
+  filter_pos: 0
+  level: 0
+  overlap: 0.1
+  overwrite: true
+  patch_size: 256
+remote:
+  evaluate_path: evaluate
+  geojson_path: geojsons
+  mask_path: masks
+  slide_path: .
+  train_path: train
+  wkt_path: wkts
+slide_download:
+  add_tree: true
+  clean_previous: true
+  import_ihc: false
+train:
+  batch_size: 32
+  epochs: 20
+  fold: 0
+  gpu: 0
+  level: 0
+  loss: bce
+  lr: 2e-4
+  model: unet/resnet50
+  num_workers: 32
+  patch_size: 224
+  scheduler: one-cycle
+  wd: 0.01

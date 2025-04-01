@@ -1,0 +1,167 @@
+schema: '2.0'
+stages:
+  slide_download:
+    cmd: python ../../../scripts/utils/file_transfer.py --data_path ../data --ihc_type
+      AE1AE3 --mapping_file ../../../ihc_mapping.json --mask_extension .tif --remote_path
+      /media/AprioricsSlides --seed 42 --slide_extension .svs --split_file ../../../splits.csv
+      --add_tree --clean_previous --extension .svs --rel_path slides --remote_rel_path
+      .
+    outs:
+    - path: ../data/slides
+      hash: md5
+      md5: d751713988987e9331980363e24189ce.dir
+      size: 0
+      nfiles: 0
+  generate_patch_csvs:
+    cmd: python ../../../scripts/train/generate_patch_dataset.py --data_path ../data
+      --ihc_type AE1AE3 --mapping_file ../../../ihc_mapping.json --mask_extension
+      .tif --remote_path /media/AprioricsSlides --seed 42 --slide_extension .svs --split_file
+      ../../../splits.csv --export_geojson --filter_pos 0 --level 0 --overlap 0.1
+      --overwrite --patch_size 512 --slidefolder ../data/slides --maskfolder ../data/masks
+      --outfolder ../data/train
+    deps:
+    - path: ../data/masks
+      hash: md5
+      md5: 9c923b617991c71debb57c3f136ad5be.dir
+      size: 547157558083
+      nfiles: 546
+    - path: ../data/slides
+      hash: md5
+      md5: d751713988987e9331980363e24189ce.dir
+      size: 0
+      nfiles: 0
+    outs:
+    - path: ../data/train/512_0/patch_csvs
+      hash: md5
+      md5: ef44b97986e90c37dd6d038af250a208.dir
+      size: 362323594
+      nfiles: 498
+  split_dataset:
+    cmd: python ../../../scripts/train/split_full_dataset.py --out_csv /data/anapath/AprioricsSlides/train/splits.csv
+      --locked_test_file /data/anapath/AprioricsSlides/train/pam50_slides.txt --data_path
+      /data/anapath/AprioricsSlides --ihc_type AE1AE3 --mapping_file ../../../ihc_mapping.json
+      --mask_extension .tif --remote_path /media/AprioricsSlides --slide_extension
+      .svs --seed 42 --nfolds 5 --test_ratio 0.1 --update --filename splits.csv --locked_test_filename
+      pam50_slides.txt --min_slide 4 --max_slide 1288
+    outs:
+    - path: /data/anapath/AprioricsSlides/train/splits.csv
+      md5: bc15256060dfdce2f06a9b524b162b86
+      size: 15819
+  train:
+    cmd: python ../../../scripts/train/train_segmentation.py --hash_file .model_hash.yaml
+      --data_path ../data --ihc_type AE1AE3 --mapping_file ../../../ihc_mapping.json
+      --mask_extension .tif --remote_path /media/AprioricsSlides --seed 42 --slide_extension
+      .svs --split_file ../../../splits.csv --batch_size 32 --epochs 20 --fold 0 --gpu
+      0 --level 0 --loss bce --lr 0.0002 --model unet/resnet50 --num_workers 32 --patch_size
+      256 --scheduler one-cycle --wd 0.01 --base_size 512 --slidefolder ../data/slides
+      --maskfolder ../data/masks --trainfolder ../data/train
+    deps:
+    - path: ../data/train/512_0/patch_csvs
+      hash: md5
+      md5: ef44b97986e90c37dd6d038af250a208.dir
+      size: 362323594
+      nfiles: 498
+    outs:
+    - path: ../data/train/logs/apriorics
+      hash: md5
+      md5: 9f72c038110659e7da14bb67cad310b9.dir
+      size: 41902103503
+      nfiles: 50
+    - path: .model_hash.yaml
+      hash: md5
+      md5: d41d8cd98f00b204e9800998ecf8427e
+      size: 0
+  evaluate:
+    cmd: python ../../../scripts/train/predict_export_geojsons.py --hash_file .model_hash.yaml
+      --outfolder ../data/evaluate --slidefolder ../data/slides --maskfolder ../data/masks
+      --trainfolder ../data/train --data_path ../data --ihc_type AE1AE3 --mapping_file
+      ../../../ihc_mapping.json --mask_extension .tif --remote_path /media/AprioricsSlides
+      --seed 42 --slide_extension .svs --split_file ../../../splits.csv --batch_size
+      32 --epochs 20 --fold 0 --gpu 0 --level 0 --loss bce --lr 0.0002 --model unet/resnet50
+      --num_workers 32 --patch_size 256 --scheduler one-cycle --wd 0.01 --area_threshold
+      100 --iou_threshold 0.5 --test_fold test
+    deps:
+    - path: ../data/train/256_0/patch_csvs
+      hash: md5
+      md5: bd01e1df590f015db7d34a1f63733017.dir
+      size: 1176668766
+      nfiles: 523
+    - path: ../data/train/logs/apriorics
+      hash: md5
+      md5: 9f72c038110659e7da14bb67cad310b9.dir
+      size: 41902103503
+      nfiles: 50
+    - path: .model_hash.yaml
+      hash: md5
+      md5: d41d8cd98f00b204e9800998ecf8427e
+      size: 0
+    outs:
+    - path: ../data/evaluate/
+      hash: md5
+      md5: 21d63dc61c70a98822e0f22fdd769927.dir
+      size: 114646261095
+      nfiles: 2224
+  evaluate_upload:
+    cmd: rsync -avu ../data/evaluate/ /media/AprioricsSlides/evaluate/AE1AE3
+    deps:
+    - path: .fp_fn_done.yaml
+      hash: md5
+      md5: d41d8cd98f00b204e9800998ecf8427e
+      size: 0
+  generate_patch_csvs_eval:
+    cmd: python ../../../scripts/train/generate_patch_dataset.py --data_path ../data
+      --ihc_type AE1AE3 --mapping_file ../../../ihc_mapping.json --mask_extension
+      .tif --remote_path /media/AprioricsSlides --seed 42 --slide_extension .svs --split_file
+      ../../../splits.csv --level 0 --overlap 0.1 --overwrite true --export_geojson
+      true --patch_size 256 --slidefolder ../data/slides --maskfolder ../data/masks
+      --outfolder ../data/train --regfolder ../data/registration_geojsons
+    deps:
+    - path: ../data/masks
+      hash: md5
+      md5: 9c923b617991c71debb57c3f136ad5be.dir
+      size: 547157558083
+      nfiles: 546
+    - path: ../data/slides
+      hash: md5
+      md5: d751713988987e9331980363e24189ce.dir
+      size: 0
+      nfiles: 0
+    outs:
+    - path: ../data/train/256_0/patch_csvs
+      hash: md5
+      md5: bd01e1df590f015db7d34a1f63733017.dir
+      size: 1176668766
+      nfiles: 523
+  get_fp_fn_geojsons:
+    cmd: python ../../../scripts/train/get_fp_fn_geojsons.py --hash_file .model_hash.yaml
+      --evalfolder ../data/evaluate --gtfolder ../data/geojsons --hovernetfolder ../data/hovernet_gpkgs
+      --trainfolder ../data/train --regfolder ../data/registration_geojsons --data_path
+      ../data --ihc_type AE1AE3 --mapping_file ../../../ihc_mapping.json --mask_extension
+      .tif --remote_path /media/AprioricsSlides --seed 42 --slide_extension .svs --split_file
+      ../../../splits.csv --batch_size 32 --epochs 20 --fold 0 --gpu 0 --level 0 --loss
+      bce --lr 0.0002 --model unet/resnet50 --num_workers 32 --patch_size 256 --scheduler
+      one-cycle --wd 0.01 --area_threshold 100 --iou_threshold 0.5 --test_fold test
+    deps:
+    - path: ../data/evaluate/
+      hash: md5
+      md5: 21d63dc61c70a98822e0f22fdd769927.dir
+      size: 114646261095
+      nfiles: 2224
+    - path: ../data/registration_geojsons
+      hash: md5
+      md5: d751713988987e9331980363e24189ce.dir
+      size: 0
+      nfiles: 0
+    - path: ../data/train/256_0/patch_geojsons
+      hash: md5
+      md5: d41d8cd98f00b204e9800998ecf8427e
+      size: 0
+    - path: .model_hash.yaml
+      hash: md5
+      md5: d41d8cd98f00b204e9800998ecf8427e
+      size: 0
+    outs:
+    - path: .fp_fn_done.yaml
+      hash: md5
+      md5: d41d8cd98f00b204e9800998ecf8427e
+      size: 0

@@ -141,3 +141,6 @@ pathaia/
 .fp_fn_done*.yaml
 
 *.ipynb
+
+data/
+.dvc_cache/

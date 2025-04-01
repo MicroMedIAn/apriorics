@@ -1,0 +1,51 @@
+schema: '2.0'
+stages:
+  slide_download:
+    cmd: python ../../../scripts/utils/file_transfer.py --data_path ../data --ihc_type
+      CD3CD20 --mapping_file ../../../ihc_mapping.json --mask_extension .tif --remote_path
+      /media/AprioricsSlides --slide_extension .svs --add_tree --import_file ../../../file_lists/cd3cd20
+      --import_ihc --extension .svs --rel_path slides --remote_rel_path .
+    outs:
+    - path: ../data/slides
+      hash: md5
+      md5: b7aece06b3214c42267374f6797c831f.dir
+      size: 273981404028
+      nfiles: 160
+  mask_extraction:
+    cmd: python ../../../scripts/mask_extraction/register_extract_polygons_masks_mp.py
+      --data_path ../data --ihc_type CD3CD20 --mapping_file ../../../ihc_mapping.json
+      --mask_extension .tif --remote_path /media/AprioricsSlides --slide_extension
+      .svs --binary_op closing --dab_thr 0.01 --nuc_max_size 24 --nuc_min_size 0 --num_workers
+      30 --object_min_size 100 --radius 5 --geojson_path geojsons --hovernet_path
+      hovernet_gpkgs --log_path registration_geojsons --slide_path slides --mask_path
+      masks
+    deps:
+    - path: ../data/slides
+      hash: md5
+      md5: b7aece06b3214c42267374f6797c831f.dir
+      size: 273981404028
+      nfiles: 160
+    outs:
+    - path: ../data/geojsons
+      hash: md5
+      md5: 96d0246564081c1e64981a0cc9d2e7b6.dir
+      size: 5903768940
+      nfiles: 155
+    - path: ../data/masks
+      hash: md5
+      md5: de56188be83746291e13925f64847fdf.dir
+      size: 103479695733
+      nfiles: 155
+    - path: ../data/registration_geojsons
+      hash: md5
+      md5: 13d3f19ffe9ca01bf80190561b633c80.dir
+      size: 1453010
+      nfiles: 155
+  geojson_upload:
+    cmd: rsync -au ../data/geojsons /media/AprioricsSlides/geojsons/CD3CD20
+    deps:
+    - path: ../data/geojsons
+      hash: md5
+      md5: 96d0246564081c1e64981a0cc9d2e7b6.dir
+      size: 5903768940
+      nfiles: 155

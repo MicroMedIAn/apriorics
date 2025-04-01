@@ -71,29 +71,26 @@ if __name__ == "__main__":
     with open(args.hash_file, "r") as f:
         version = yaml.safe_load(f)[args.fold]
 
-    evalfolder = args.evalfolder / args.ihc_type / version / "geojsons"
-    gtfolder = args.gtfolder / args.ihc_type / "HE"
+    evalfolder = args.evalfolder / version / "geojsons"
+    gtfolder = args.gtfolder
     hovernetfolder = args.hovernetfolder / args.ihc_type
     patchgjfolder = (
         args.trainfolder
-        / args.ihc_type
         / f"{args.patch_size}_{args.level}/patch_geojsons"
     )
-    regfolder = args.regfolder / args.ihc_type / "HE"
+    regfolder = args.regfolder
 
     fpfolder = (
         args.evalfolder
-        / args.ihc_type
         / version
         / f"geojsons_fp_{int(args.iou_threshold*100)}"
     )
     fnfolder = (
         args.evalfolder
-        / args.ihc_type
         / version
         / f"geojsons_fn_{int(args.iou_threshold*100)}"
     )
-    metfolder = args.evalfolder / args.ihc_type / version / "metrics_hover"
+    metfolder = args.evalfolder / version / "metrics_hover"
 
     fpfolder.mkdir(exist_ok=True)
     fnfolder.mkdir(exist_ok=True)

@@ -1,0 +1,30 @@
+base:
+  data_path: ../data
+  ihc_type: AE1AE3
+  mapping_file: ../../../ihc_mapping.json
+  mask_extension: .tif
+  remote_path: /media/AprioricsSlides/
+  slide_extension: .svs
+local:
+  geojson_path: geojsons
+  hovernet_path: hovernet_gpkgs
+  log_path: registration_geojsons
+  slide_path: slides
+  mask_path: masks
+  wkt_path: wkts
+mask_extraction:
+  binary_op: closing
+  dab_thr: 0.03
+  object_min_size: 1000
+  overlap: 0.3
+  psize: 2000
+  radius: 10
+remote:
+  geojson_path: geojsons
+  mask_path: masks
+  slide_path: .
+  wkt_path: wkts
+slide_download:
+  add_tree: true
+  clean_previous: true
+  import_ihc: true

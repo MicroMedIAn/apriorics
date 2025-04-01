@@ -1,0 +1,35 @@
+stages:
+  slide_download:
+    cmd: >-
+      python ../../../scripts/utils/file_transfer.py
+      ${base}
+      ${slide_download}
+      --extension ${base.slide_extension}
+      --rel_path ${local.slide_path}
+      --remote_rel_path ${remote.slide_path}
+    outs:
+      - ${base.data_path}/${local.slide_path}:
+          persist: true
+          cache: false
+
+  mask_extraction:
+    cmd: >-
+      python ../../../scripts/mask_extraction/register_extract_polygons_masks_mp.py
+      ${base}
+      ${mask_extraction}
+      ${local}
+    deps:
+      - ${base.data_path}/${local.slide_path}
+    outs:
+      - ${base.data_path}/${local.mask_path}:
+          persist: true
+      - ${base.data_path}/${local.geojson_path}:
+          persist: true
+      - ${base.data_path}/${local.log_path}:
+          persist: true
+
+  geojson_upload:
+    cmd: >-
+      rsync -au ${base.data_path}/${local.geojson_path} ${base.remote_path}/${remote.geojson_path}/${base.ihc_type}
+    deps:
+      - ${base.data_path}/${local.geojson_path}

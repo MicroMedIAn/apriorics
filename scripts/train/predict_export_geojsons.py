@@ -81,10 +81,10 @@ parser.add_argument(
     required=True,
 )
 parser.add_argument(
-    "--splitfile",
-    type=str,
-    default="splits.csv",
-    help="Name of the csv file containing train/valid/test splits. Default splits.csv.",
+    "--split_file",
+    type=Path,
+    required=True,
+    help="Path to the csv file containing train/valid/test splits.",
 )
 parser.add_argument(
     "--gpu",
@@ -173,11 +173,11 @@ if __name__ == "__main__":
 
     seed_everything(workers=True)
 
-    trainfolder = args.trainfolder / args.ihc_type
+    trainfolder = args.trainfolder
     patch_csv_folder = trainfolder / f"{args.patch_size}_{args.level}/patch_csvs"
-    slidefolder = args.slidefolder / args.ihc_type / "HE"
-    maskfolder = args.maskfolder / args.ihc_type / "HE"
-    logfolder = args.trainfolder / "logs" / args.ihc_type
+    slidefolder = args.slidefolder / "HE"
+    maskfolder = args.maskfolder
+    logfolder = args.trainfolder / "logs"
 
     with open(args.hash_file, "r") as f:
         version = yaml.safe_load(f)[args.fold]
@@ -192,7 +192,7 @@ if __name__ == "__main__":
         lambda x: maskfolder / x.with_suffix(args.mask_extension).name
     )
 
-    split_df = pd.read_csv(args.trainfolder / args.splitfile).sort_values("slide")
+    split_df = pd.read_csv(args.splitfile).sort_values("slide")
     split_df = split_df.loc[split_df["slide"].isin(patches_paths.map(lambda x: x.stem))]
     val_idxs = (split_df["split"] == args.test_fold).values
 
@@ -313,7 +313,7 @@ if __name__ == "__main__":
             polygons = MultiPolygon(polygons=[polygons])
 
         suffix = "_clf" if clf is not None else ""
-        outfolder = args.outfolder / args.ihc_type / f"{version}{suffix}" / "geojsons"
+        outfolder = args.outfolder / f"{version}{suffix}" / "geojsons"
         if not outfolder.exists():
             outfolder.mkdir(parents=True)
 

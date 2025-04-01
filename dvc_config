@@ -1,0 +1,8 @@
+[core]
+    autostage = true
+    remote = AprioricsSlides
+['remote "AprioricsSlides"']
+    url = /media/AprioricsSlides/.cache
+[cache]
+    dir = ../../../.dvc_cache
+    type = hardlink,symlink

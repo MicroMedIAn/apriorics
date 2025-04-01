@@ -102,21 +102,20 @@ parser.add_argument("--regfolder", type=Path)
 if __name__ == "__main__":
     args = parser.parse_known_args()[0]
     input_files = get_files(
-        args.slidefolder / args.ihc_type / "HE",
+        args.slidefolder / "HE",
         extensions=args.slide_extension,
         recurse=args.recurse,
     )
     input_files.sort(key=lambda x: x.stem)
 
     outfolder = (
-        args.outfolder / args.ihc_type / f"{args.patch_size}_{args.level}/patch_csvs"
+        args.outfolder / f"{args.patch_size}_{args.level}/patch_csvs"
     )
     if not outfolder.exists():
         outfolder.mkdir(parents=True)
 
     geojsonfolder = (
         args.outfolder
-        / args.ihc_type
         / f"{args.patch_size}_{args.level}/patch_geojsons"
     )
     if args.export_geojson and not geojsonfolder.exists():
@@ -133,7 +132,7 @@ if __name__ == "__main__":
 
         if args.maskfolder is not None:
             mask_path = args.maskfolder / in_file_path.relative_to(
-                args.slidefolder
+                args.slidefolder / "HE"
             ).with_suffix(args.mask_extension)
             if not mask_path.exists():
                 return
@@ -147,7 +146,7 @@ if __name__ == "__main__":
 
         if args.regfolder is not None:
             reg_path = (
-                args.regfolder / args.ihc_type / f"HE/{in_file_path.stem}.geojson"
+                args.regfolder / f"{in_file_path.stem}.geojson"
             )
             if not reg_path.exists():
                 return

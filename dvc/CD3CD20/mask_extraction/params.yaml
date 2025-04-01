@@ -1,0 +1,30 @@
+base:
+  data_path: ../data
+  ihc_type: CD3CD20
+  mapping_file: ../../../ihc_mapping.json
+  mask_extension: .tif
+  remote_path: /media/AprioricsSlides
+  slide_extension: .svs
+local:
+  geojson_path: geojsons
+  hovernet_path: hovernet_gpkgs
+  log_path: registration_geojsons
+  slide_path: slides
+  mask_path: masks
+mask_extraction:
+  binary_op: closing
+  dab_thr: 0.01
+  nuc_max_size: 24
+  nuc_min_size: 0
+  num_workers: 30
+  object_min_size: 100
+  radius: 5
+remote:
+  geojson_path: geojsons
+  mask_path: masks
+  slide_path: .
+slide_download:
+  add_tree: true
+  clean_previous: false
+  import_file: ../../../file_lists/cd3cd20
+  import_ihc: true

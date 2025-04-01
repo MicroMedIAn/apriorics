@@ -1,0 +1,26 @@
+base:
+  data_path: ../data
+  ihc_type: PHH3
+  mapping_file: ../../../ihc_mapping.json
+  mask_extension: .npz
+  remote_path: /media/AprioricsSlides
+  slide_extension: .svs
+local:
+  geojson_path: geojsons
+  hovernet_path: hovernet_gpkgs
+  log_path: registration_geojsons
+  slide_path: slides
+  mask_path: masks
+mask_extraction:
+  binary_op: none
+  dab_thr: 0.04
+  object_min_size: 50
+remote:
+  geojson_path: geojsons
+  mask_path: masks
+  slide_path: .
+  wkt_path: wkts
+slide_download:
+  add_tree: true
+  clean_previous: true
+  import_ihc: true

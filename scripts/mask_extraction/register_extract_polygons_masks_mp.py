@@ -348,13 +348,13 @@ def main(args):
     interval = -int(args.overlap * args.psize)
 
     hefiles = get_files(
-        slidefolder / args.ihc_type / "HE",
+        slidefolder / "HE",
         extensions=args.slide_extension,
         recurse=False,
     )
     hefiles.sort(key=lambda x: x.stem.split("-")[0])
     ihcfiles = get_files(
-        slidefolder / args.ihc_type / "IHC",
+        slidefolder / "IHC",
         extensions=args.slide_extension,
         recurse=False,
     )
@@ -383,7 +383,7 @@ def main(args):
         ihcfile = Path(ihcfile)
         hovernetfile = Path(hovernetfiles[k])
 
-        maskpath = maskfolder / hefile.relative_to(slidefolder).with_suffix(".png")
+        maskpath = maskfolder / hefile.relative_to(slidefolder / "HE").with_suffix(".png")
         if not maskpath.parent.exists():
             maskpath.parent.mkdir(parents=True)
 
@@ -428,7 +428,7 @@ def main(args):
         if not obj_polygons:
             return
 
-        logfile = logfolder / hefile.relative_to(slidefolder).with_suffix(".geojson")
+        logfile = logfolder / hefile.relative_to(slidefolder / "HE").with_suffix(".geojson")
         if not logfile.parent.exists():
             logfile.parent.mkdir(parents=True)
 
@@ -442,7 +442,7 @@ def main(args):
 
         print("Saving full polygons...")
 
-        geojsonfile = geojsonfolder / hefile.relative_to(slidefolder).with_suffix(
+        geojsonfile = geojsonfolder / hefile.relative_to(slidefolder / "HE").with_suffix(
             ".geojson"
         )
         if not geojsonfile.parent.exists():

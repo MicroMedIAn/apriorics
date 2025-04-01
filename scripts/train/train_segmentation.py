@@ -86,10 +86,10 @@ parser.add_argument(
     required=True,
 )
 parser.add_argument(
-    "--splitfile",
-    type=str,
-    default="splits.csv",
-    help="Name of the csv file containing train/valid/test splits. Default splits.csv.",
+    "--split_file",
+    type=Path,
+    required=True,
+    help="Path to the csv file containing train/valid/test splits.",
 )
 parser.add_argument(
     "--gpu",
@@ -257,11 +257,11 @@ if __name__ == "__main__":
 
     seed_everything(workers=True)
 
-    trainfolder = args.trainfolder / args.ihc_type
+    trainfolder = args.trainfolder
     patch_csv_folder = trainfolder / f"{args.base_size}_{args.level}/patch_csvs"
-    maskfolder = args.maskfolder / args.ihc_type / "HE"
-    slidefolder = args.slidefolder / args.ihc_type / "HE"
-    logfolder = args.trainfolder / "logs" / args.ihc_type
+    maskfolder = args.maskfolder
+    slidefolder = args.slidefolder
+    logfolder = args.trainfolder / "logs"
 
     patches_paths = get_files(
         patch_csv_folder, extensions=".csv", recurse=False
@@ -273,7 +273,7 @@ if __name__ == "__main__":
         lambda x: slidefolder / x.with_suffix(args.slide_extension).name
     )
 
-    split_df = pd.read_csv(args.trainfolder / args.splitfile).sort_values("slide")
+    split_df = pd.read_csv(args.splitfile).sort_values("slide")
     split_df = split_df.loc[split_df["slide"].isin(patches_paths.map(lambda x: x.stem))]
     test_idxs = (split_df["split"] == "test").values
     val_idxs = (split_df["split"] == args.fold).values

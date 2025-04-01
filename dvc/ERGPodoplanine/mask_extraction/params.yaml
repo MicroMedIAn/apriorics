@@ -1,0 +1,28 @@
+base:
+  data_path: ../data
+  ihc_type: ERGPodoplanine
+  mapping_file: ../../../ihc_mapping.json
+  mask_extension: .tif
+  remote_path: /media/AprioricsSlides
+  slide_extension: .svs
+local:
+  geojson_path: geojsons
+  hovernet_path: hovernet_gpkgs
+  log_path: registration_geojsons
+  slide_path: slides
+  mask_path: masks
+  wkt_path: wkts
+mask_extraction:
+  binary_op: none
+  dab_thr: 0.015
+  num_workers: 20
+  object_min-size: 50
+remote:
+  geojson_path: geojsons
+  mask_path: masks
+  slide_path: .
+  wkt_path: wkts
+slide_download:
+  add_tree: true
+  clean_previous: true
+  import_ihc: true

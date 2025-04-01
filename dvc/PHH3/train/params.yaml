@@ -1,0 +1,56 @@
+base:
+  data_path: ../data
+  ihc_type: PHH3
+  mapping_file: ../../../ihc_mapping.json
+  mask_extension: .npz
+  remote_path: /media/AprioricsSlides
+  seed: 42
+  slide_extension: .svs
+  split_file: ../../../splits.csv
+evaluate:
+  area_threshold: 50
+  flood_mask: true
+  test_fold: test
+local:
+  evaluate_path: evaluate
+  geojson_path: geojsons
+  hovernet_path: hovernet_gpkgs
+  mask_path: masks
+  reg_path: registration_geojsons
+  slide_path: slides
+  train_path: train
+  wkt_path: wkts
+patches:
+  export_geojson: true
+  filter_pos: 0
+  level: 0
+  overlap: 0.1
+  overwrite: true
+  patch_size: 256
+remote:
+  evaluate_path: evaluate
+  geojson_path: geojsons
+  mask_path: masks
+  slide_path: .
+  train_path: train
+  wkt_path: wkts
+slide_download:
+  add_tree: true
+  clean_previous: true
+  import_ihc: false
+train:
+  batch_size: 32
+  data_step: 1
+  data_type: segmentation_sparse
+  epochs: 20
+  fold: 0
+  gpu: 1
+  level: 0
+  loss: bce
+  lr: 2e-4
+  model: unet/resnet50
+  num_workers: 32
+  p_pos: 0.5
+  patch_size: 128
+  scheduler: one-cycle
+  wd: 0.01
