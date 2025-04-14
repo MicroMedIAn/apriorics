@@ -5,10 +5,10 @@ stages:
       ${base}
       ${slide_download}
       --extension ${base.slide_extension}
-      --rel_path ${local.slide_path}
+      --rel_path ${local.main_slide_path}
       --remote_rel_path ${remote.slide_path}
     outs:
-      - ${base.data_path}/${local.slide_path}:
+      - ${base.data_path}/${local.main_slide_path}:
           persist: true
           cache: false
 
@@ -19,7 +19,7 @@ stages:
       ${mask_extraction}
       ${local}
     deps:
-      - ${base.data_path}/${local.slide_path}
+      - ${base.data_path}/${local.main_slide_path}
     outs:
       - ${base.data_path}/${local.mask_path}:
           persist: true

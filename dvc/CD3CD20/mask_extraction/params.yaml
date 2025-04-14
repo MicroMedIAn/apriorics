@@ -26,5 +26,5 @@ remote:
 slide_download:
   add_tree: true
   clean_previous: false
-  import_file: ../../../file_lists/cd3cd20
+  import_file: ../../../file_lists/CD3CD20
   import_ihc: true

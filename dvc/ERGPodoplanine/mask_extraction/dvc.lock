@@ -4,13 +4,14 @@ stages:
     cmd: python ../../../scripts/utils/file_transfer.py --data_path ../data --ihc_type
       ERGPodoplanine --mapping_file ../../../ihc_mapping.json --mask_extension .tif
       --remote_path /media/AprioricsSlides --slide_extension .svs --add_tree --clean_previous
-      --import_ihc --extension .svs --rel_path slides --remote_rel_path .
+      --import_ihc --import_file ../../../file_lists/ERGPodoplanine --extension .svs
+      --rel_path slides --remote_rel_path .
     outs:
     - path: ../data/slides
       hash: md5
-      md5: d751713988987e9331980363e24189ce.dir
-      size: 0
-      nfiles: 0
+      md5: 81074549693532aec253963ccd6242f4.dir
+      size: 515523338746
+      nfiles: 324
   mask_extraction:
     cmd: python ../../../scripts/mask_extraction/register_extract_polygons_masks_mp.py
       --data_path ../data --ihc_type ERGPodoplanine --mapping_file ../../../ihc_mapping.json

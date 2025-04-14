@@ -7,11 +7,11 @@ base:
   slide_extension: .svs
 local:
   geojson_path: geojsons
-  hovernet_path: hovernet_gpkgs
+  hovernet_path: hoverfast_gpkgs
   log_path: registration_geojsons
-  slide_path: slides
+  main_slide_path: slides
+  slide_path: slides_tmp
   mask_path: masks
-  wkt_path: wkts
 mask_extraction:
   binary_op: none
   dab_thr: 0.015
@@ -21,8 +21,8 @@ remote:
   geojson_path: geojsons
   mask_path: masks
   slide_path: .
-  wkt_path: wkts
 slide_download:
   add_tree: true
   clean_previous: true
   import_ihc: true
+  import_file: ../../../file_lists/ERGPodoplanine

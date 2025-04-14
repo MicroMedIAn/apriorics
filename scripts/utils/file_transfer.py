@@ -81,7 +81,7 @@ if __name__ == "__main__":
             return
 
         if args.add_tree:
-            outfolder = local_path / info["ihc_type"] / info["slide_type"]
+            outfolder = local_path / info["slide_type"]
         else:
             outfolder = local_path
         if not outfolder.exists():
