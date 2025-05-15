@@ -153,6 +153,9 @@ parser.add_argument(
 parser.add_argument(
     "--nuc_max_size", type=float, default=24, help="Max size for cell nuclei in μm²."
 )
+parser.add_argument(
+    "--hole_min_size", type=int, help="Minimum size for holes in polygons. Optional."
+)
 
 
 def get_filefilter(slidefile):
@@ -221,6 +224,7 @@ def register_extract_mask(args, patch_gdf):
         if coord_tfm is None:
             return
     except IndexError:
+
         def coord_tfm(x, y):
             return Coord(x, y)
 
@@ -381,9 +385,14 @@ def main(args):
     for k, (hefile, ihcfile) in enumerate(zip(hefiles, ihcfiles)):
         hefile = Path(hefile)
         ihcfile = Path(ihcfile)
-        hovernetfile = Path(hovernetfiles[k])
+        if args.hovernet_path is not None:
+            hovernetfile = Path(hovernetfiles[k])
+        else:
+            hovernetfile = None
 
-        maskpath = maskfolder / hefile.relative_to(slidefolder / "HE").with_suffix(".png")
+        maskpath = maskfolder / hefile.relative_to(slidefolder / "HE").with_suffix(
+            ".png"
+        )
         if not maskpath.parent.exists():
             maskpath.parent.mkdir(parents=True)
 
@@ -424,11 +433,13 @@ def main(args):
                 p_w, p_h = patch.size
                 patch_polygons.append(box(x, y, x + p_w, y + p_h))
                 obj_polygons.append(polygon)
-        
+
         if not obj_polygons:
             return
 
-        logfile = logfolder / hefile.relative_to(slidefolder / "HE").with_suffix(".geojson")
+        logfile = logfolder / hefile.relative_to(slidefolder / "HE").with_suffix(
+            ".geojson"
+        )
         if not logfile.parent.exists():
             logfile.parent.mkdir(parents=True)
 
@@ -442,11 +453,22 @@ def main(args):
 
         print("Saving full polygons...")
 
-        geojsonfile = geojsonfolder / hefile.relative_to(slidefolder / "HE").with_suffix(
-            ".geojson"
-        )
+        geojsonfile = geojsonfolder / hefile.relative_to(
+            slidefolder / "HE"
+        ).with_suffix(".geojson")
         if not geojsonfile.parent.exists():
             geojsonfile.parent.mkdir(parents=True)
+
+        if args.hole_min_size is not None:
+            pols = []
+            for pol in obj_polygons.geoms:
+                holes = []
+                for ls in pol.interiors:
+                    if Polygon(ls.coords).area > args.hole_min_size:
+                        holes.append(ls.coords)
+                pol = Polygon(pol.exterior.coords, holes)
+                pols.append(pol)
+            obj_polygons = unary_union(pols)
 
         geopandas.GeoSeries(obj_polygons.geoms).to_file(geojsonfile)
 
@@ -473,7 +495,7 @@ def main(args):
     client.containers.run(
         "historeg",
         f"rm -rf /data/{tmpfolder.name}",
-        volumes=[f"{tmpfolder.parent}:/data"],
+        volumes=[f"{tmpfolder.parent.absolute()}:/data"],
     )
 
 
