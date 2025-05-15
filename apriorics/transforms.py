@@ -1,24 +1,13 @@
 import random
-from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple, Union
+from typing import Callable, Dict, Optional, Sequence, Tuple
 
 import numpy as np
-import spams
 import torch
 from albumentations import CropNonEmptyMaskIfExists
-from albumentations.core.transforms_interface import DualTransform, ImageOnlyTransform
-from nptyping import Float, NDArray, Number, Shape
-from pathaia.util.basic import ifnone
-from pathaia.util.types import NDByteImage, NDGrayImage, NDImage
+from albumentations.core.transforms_interface import DualTransform
+from pathaia.util.types import NDGrayImage, NDImage
 from skimage.morphology import label, remove_small_holes, remove_small_objects
-from staintools.miscellaneous.optical_density_conversion import convert_RGB_to_OD
 from torchvision.transforms.functional import to_tensor
-
-from apriorics.stain_augment import (
-    _get_raw_concentrations,
-    _image_to_absorbance_matrix,
-    _normalized_from_concentrations,
-    stain_extraction_pca,
-)
 
 
 class ToSingleChannelMask(DualTransform):
@@ -86,154 +75,6 @@ class ToTensor(DualTransform):
 
     def get_transform_init_args_names(self) -> Tuple[str]:
         return ("transpose_mask",)
-
-
-def get_concentrations(
-    img: NDByteImage,
-    stain_matrix: NDArray[Shape["2, 3"], Float],
-    regularizer: float = 0.01,
-) -> NDArray[Shape["*, *, 2"], Float]:
-    OD = convert_RGB_to_OD(img).reshape((-1, 3))
-    HE = spams.lasso(
-        X=OD.T,
-        D=stain_matrix.T,
-        mode=2,
-        lambda1=regularizer,
-        pos=True,
-        numThreads=1,
-    )
-    return HE.toarray().T
-
-
-class StainAugmentor(ImageOnlyTransform):
-    def __init__(
-        self,
-        alpha_range: float = 0.2,
-        beta_range: float = 0.1,
-        alpha_stain_range: float = 0.3,
-        beta_stain_range: float = 0.2,
-        he_ratio: float = 0.3,
-        always_apply: bool = True,
-        device="cpu",
-        p: float = 1,
-    ):
-        super(StainAugmentor, self).__init__(always_apply, p)
-        self.alpha_range = alpha_range
-        self.beta_range = beta_range
-        self.alpha_stain_range = alpha_stain_range
-        self.beta_stain_range = beta_stain_range
-        self.he_ratio = he_ratio
-        self.device = device
-
-    def get_params(self):
-        return {
-            "alpha": np.random.uniform(
-                1 - self.alpha_range, 1 + self.alpha_range, size=2
-            ),
-            "beta": np.random.uniform(-self.beta_range, self.beta_range, size=2),
-            "alpha_stain": np.stack(
-                (
-                    np.random.uniform(
-                        1 - self.alpha_stain_range * self.he_ratio,
-                        1 + self.alpha_stain_range * self.he_ratio,
-                        size=3,
-                    ),
-                    np.random.uniform(
-                        1 - self.alpha_stain_range,
-                        1 + self.alpha_stain_range,
-                        size=3,
-                    ),
-                ),
-            ),
-            "beta_stain": np.stack(
-                (
-                    np.random.uniform(
-                        -self.beta_stain_range * self.he_ratio,
-                        self.beta_stain_range * self.he_ratio,
-                        size=3,
-                    ),
-                    np.random.uniform(
-                        -self.beta_stain_range, self.beta_stain_range, size=3
-                    ),
-                ),
-            ),
-        }
-
-    def initialize(
-        self,
-        alpha: Optional[
-            Union[NDArray[Shape["2"], Float], NDArray[Shape["2, 3"], Float]]
-        ],
-        beta: Optional[
-            Union[NDArray[Shape["2"], Float], NDArray[Shape["2, 3"], Float]]
-        ],
-        shape: Tuple[int, ...] = 2,
-    ) -> Tuple[
-        Union[NDArray[Shape["2"], Float], NDArray[Shape["2, 3"], Float]],
-        Union[NDArray[Shape["2"], Float], NDArray[Shape["2, 3"], Float]],
-    ]:
-        alpha = ifnone(np.asarray(alpha), np.ones(shape))
-        beta = ifnone(np.asarray(beta), np.zeros(shape))
-        return alpha, beta
-
-    def apply(
-        self,
-        image_and_stain: Tuple[
-            NDArray[Shape["*, *, 3"], Number], Optional[NDArray[Shape["2, 3"], Float]]
-        ],
-        alpha: Optional[NDArray[Shape["2"], Float]] = None,
-        beta: Optional[NDArray[Shape["2"], Float]] = None,
-        alpha_stain: Optional[NDArray[Shape["2, 3"], Float]] = None,
-        beta_stain: Optional[NDArray[Shape["2, 3"], Float]] = None,
-        **params
-    ) -> NDArray[Shape["*, *, 3"], Number]:
-        image, stain_matrix = image_and_stain
-        image = to_tensor(image).to(self.device) * 255
-        alpha, beta = self.initialize(alpha, beta, shape=2)
-        alpha_stain, beta_stain = self.initialize(alpha_stain, beta_stain, shape=(2, 3))
-
-        alpha = torch.as_tensor(alpha, dtype=image.dtype, device=self.device)
-        beta = torch.as_tensor(beta, dtype=image.dtype, device=self.device)
-        alpha_stain = torch.as_tensor(
-            alpha_stain, dtype=image.dtype, device=self.device
-        )
-        beta_stain = torch.as_tensor(beta_stain, dtype=image.dtype, device=self.device)
-
-        absorbance = _image_to_absorbance_matrix(image, channel_axis=0)
-        if stain_matrix is None:
-            stain_matrix = stain_extraction_pca(
-                absorbance, image_type="absorbance", channel_axis=0
-            )
-        else:
-            stain_matrix = torch.as_tensor(
-                stain_matrix, device=self.device, dtype=image.dtype
-            )
-
-        HE = _get_raw_concentrations(stain_matrix, absorbance)
-        stain_matrix = (stain_matrix.T * alpha_stain + beta_stain).T
-        stain_matrix = torch.clip(stain_matrix, 0, 1)
-        HE = torch.where(HE > 0.2, (HE.T * alpha[None] + beta[None]).T, HE)
-        max_conc = torch.cat([torch.quantile(ch_raw, 0.99)[None] for ch_raw in HE])
-        out = (
-            _normalized_from_concentrations(
-                HE, 99, stain_matrix, max_conc, 240, image.shape, 2
-            )
-            .cpu()
-            .numpy()
-        )
-        return out.astype(np.float32) / 255
-
-    def get_transform_init_args_names(self) -> List[str]:
-        return (
-            "alpha_range",
-            "beta_range",
-            "alpha_stain_range",
-            "beta_stain_range",
-            "he_ratio",
-        )
-
-    def update_params(self, params: Dict[str, Any], **kwargs) -> Dict[str, Any]:
-        return params
 
 
 class RandomCropAroundMaskIfExists(CropNonEmptyMaskIfExists):
