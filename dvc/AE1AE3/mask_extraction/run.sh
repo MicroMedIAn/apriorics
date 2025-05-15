@@ -1,0 +1,1 @@
+../../../scripts/mask_extraction/run.sh

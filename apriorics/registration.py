@@ -1,48 +1,28 @@
 from os import PathLike
 from pathlib import Path
-from typing import Callable, List, Sequence, Tuple, Union
+from typing import Callable, Tuple, Union
 
 import cv2
 import docker
+import itk
 import numpy as np
-from nptyping import Float, Int, NDArray, Number, Shape
 from pathaia.util.types import (
     Coord,
-    NDBoolMask,
     NDByteGrayImage,
     NDByteImage,
     Patch,
     Slide,
 )
-from skimage.color import rgb2hed, rgb2hsv
+from skimage.color import rgb2hed
 from skimage.io import imsave
-from skimage.measure import label
-from skimage.morphology import (
-    binary_closing,
-    binary_dilation,
-    remove_small_holes,
-    remove_small_objects,
-)
+from skimage.morphology import binary_closing, binary_dilation
+from skimage.registration import phase_cross_correlation
 from skimage.util import img_as_float, img_as_ubyte
 
-from apriorics.masks import get_dab_mask, get_tissue_mask, get_tissue_mask_hsv
+from apriorics.masks import get_dab_mask, get_tissue_mask
 
 
-def get_dot_mask(
-    slide: Slide, thumb_level: int = 3, min_val: int = 60, max_val: int = 90
-) -> NDBoolMask:
-    r"""
-    Given a slide, computes a thumbnail mask where gray fixing dots are segmented.
-
-    Args:
-        thumb_level: pyramid level on which to extract the thumbnail.
-        min_val: min value to filter on RGB channels.
-        max_val: max value to filter on RGB channels.
-
-    Returns:
-        Mask array with fixing dots segmented.
-    """
-    usr = 2 ** (2 * (3 - thumb_level))
+def get_thumbnail(slide: Slide, thumb_level: int = 3) -> NDByteImage:
     thumb = np.asarray(
         slide.read_region(
             (0, 0),
@@ -50,297 +30,7 @@ def get_dot_mask(
             slide.level_dimensions[thumb_level],
         ).convert("RGB")
     )
-    thumb_hsv = rgb2hsv(thumb)
-    mask = (thumb_hsv[:, :, 1] <= 0.35) & (thumb_hsv[:, :, 2] <= 0.35)
-    mask = remove_small_holes(
-        remove_small_objects(mask, min_size=400 * usr), area_threshold=500 * usr
-    )
-    return thumb, mask
-
-
-def get_angle(
-    v1: NDArray[Shape["2"], Number], v2: NDArray[Shape["2"], Number]
-) -> float:
-    r"""
-    Get angle between two 2D vectors.
-
-    Args:
-        v1: first input vector.
-        v2: second input vector.
-
-    Returns:
-        Angle in radian between -pi and +pi.
-    """
-    v1 = v1 / np.linalg.norm(v1)
-    v2 = v2 / np.linalg.norm(v2)
-    dot = np.clip(np.dot(v1, v2), -1, 1)
-    angle = np.arccos(dot) * np.sign((v2 - v1)[1])
-    return angle
-
-
-def get_sort_key(
-    vertices: Sequence[Tuple[Number, Number]], centroid: Tuple[int, int]
-) -> Callable[[Tuple[Number, Number]], float]:
-    r"""
-    Computes a key function that aims at sorting vertices by increasing angle around
-    their centroid.
-
-    Args:
-        vertices: array of vertices coordinates.
-
-    Returns:
-        Function that takes a vertex as input and returns the angle between the (1, 0)
-        horizontal unit vector and the vector between the vertices' centroid and the
-        input vertex.
-    """
-    center = np.array(centroid)
-
-    def _key(vertex):
-        vertex = np.array(vertex)
-        vector = vertex - center
-        return get_angle(np.array([1, 0]), vector)
-
-    return _key
-
-
-def get_vertices(mask: NDBoolMask, centroid: Tuple[int, int]) -> List[Tuple[int, int]]:
-    r"""
-    Given a fixing dot mask (obtained using :func:`get_dot_mask`), get list of all dots'
-    centroid coordinates, sorted in trigonometric order.
-
-    Args:
-        mask: input dot mask array.
-
-    Returns:
-        List of vertex coordinates as tuples.
-    """
-    labels = label(mask)
-    vertices = []
-    sizes = []
-    for i in range(1, labels.max() + 1):
-        ii, jj = (labels == i).nonzero()
-        if len(ii) > 4000:
-            continue
-        vertices.append((int(jj.mean()), int(ii.mean())))
-        sizes.append(len(ii))
-    key = get_sort_key(vertices, centroid)
-    idxs = np.argsort([key(v) for v in vertices])
-    vertices = [vertices[i] for i in idxs]
-    sizes = [sizes[i] for i in idxs]
-    return vertices, sizes
-
-
-def get_rotation(
-    fixed_vert: NDArray[Shape["*, 2"], Int], moving_vert: NDArray[Shape["*, 2"], Int]
-) -> NDArray[Shape["3, 3"], Float]:
-    r"""
-    Given 2 lists of vertices coordinates sorted in trigonometric order, get the
-    rotation transform that aligns them.
-
-    Args:
-        fixed_vert: first vertices coordinates array considered as fixed for the
-            rotation.
-        moving_vert:  first vertices coordinates array considered as moving for the
-            rotation.
-
-    Returns:
-        2D rotation 3x3 matrix.
-    """
-    angle = get_angle(moving_vert[1] - moving_vert[0], fixed_vert[1] - fixed_vert[0])
-    return np.array(
-        [
-            [np.cos(angle), -np.sin(angle), 0],
-            [np.sin(angle), np.cos(angle), 0],
-            [0, 0, 1],
-        ],
-        dtype=np.float64,
-    )
-
-
-def get_scale(
-    fixed_vert: NDArray[Shape["*, 2"], Int], moving_vert: NDArray[Shape["*, 2"], Int]
-) -> NDArray[Shape["3, 3"], Float]:
-    r"""
-    Given 2 lists of vertices coordinates sorted in trigonometric order, get the
-    scale transform that aligns them.
-
-    Args:
-        fixed_vert: first vertices coordinates array considered as fixed for the
-            scale.
-        moving_vert:  first vertices coordinates array considered as moving for the
-            scale.
-
-    Returns:
-        2D scale 3x3 matrix.
-    """
-    x_moving_min, y_moving_min = moving_vert.min(0)
-    x_moving_max, y_moving_max = moving_vert.max(0)
-    x_fixed_min, y_fixed_min = fixed_vert.min(0)
-    x_fixed_max, y_fixed_max = fixed_vert.max(0)
-    if x_moving_max - x_moving_min < 5 or x_fixed_max - x_fixed_min < 5:
-        scale_y = (y_fixed_max - y_fixed_min) / (y_moving_max - y_moving_min)
-        scale_x = scale_y
-    elif y_moving_max - y_moving_min < 5 or y_fixed_max - y_fixed_min < 5:
-        scale_x = (x_fixed_max - x_fixed_min) / (x_moving_max - x_moving_min)
-        scale_y = scale_x
-    else:
-        scale_x = (x_fixed_max - x_fixed_min) / (x_moving_max - x_moving_min)
-        scale_y = (y_fixed_max - y_fixed_min) / (y_moving_max - y_moving_min)
-    return np.array([[scale_x, 0, 0], [0, scale_y, 0], [0, 0, 1]], dtype=np.float64)
-
-
-def get_translation(
-    fixed_vert: NDArray[Shape["*, 2"], Int], moving_vert: NDArray[Shape["*, 2"], Int]
-) -> NDArray[Shape["3, 3"], Float]:
-    r"""
-    Given 2 lists of vertices coordinates sorted in trigonometric order, get the
-    translation transform that aligns them.
-
-    Args:
-        fixed_vert: first vertices coordinates array considered as fixed for the
-            translation.
-        moving_vert:  first vertices coordinates array considered as moving for the
-            translation.
-
-    Returns:
-        2D translation 3x3 matrix.
-    """
-    xoff, yoff = fixed_vert.min(0) - moving_vert.min(0)
-    return np.array([[1, 0, xoff], [0, 1, yoff], [0, 0, 1]], dtype=np.float64)
-
-
-def equalize_vert_lengths(
-    l1: List[Tuple[Number, Number]],
-    l2: List[Tuple[Number, Number]],
-    centroid1: Tuple[int, int],
-    centroid2: Tuple[int, int],
-    max_angle: float = 0.4,
-):
-    r"""
-    Given 2 lists of vertices coordinates, remove items from the longest one that are
-    the farthest from all points from the smalles one.
-
-    Args:
-        l1: first list of vertices coordinates.
-        l2: second list of vertices coordinates.
-    """
-    l1, l1_sizes = l1
-    l2, l2_sizes = l2
-    if len(l1) > len(l2):
-        ltemp = l1
-        ltemp_sizes = l1_sizes
-        centroidtemp = centroid1
-        l1 = l2
-        l1_sizes = l2_sizes
-        centroid1 = centroid2
-        l2 = ltemp
-        l2_sizes = ltemp_sizes
-        centroid2 = centroidtemp
-
-    def _key(x):
-        angle_diffs = []
-        vx = np.array(x) - np.array(centroid2)
-        ax = get_angle(np.array([1, 0]), vx)
-        for y in l1:
-            vy = np.array(y) - np.array(centroid1)
-            ay = get_angle(np.array([1, 0]), vy)
-            angle_diffs.append(abs(ax - ay))
-        return min(angle_diffs)
-
-    sorted_l2 = sorted(l2, key=_key)
-    cur_angle = _key(sorted_l2[-1])
-    while len(l2) > len(l1) or cur_angle > max_angle:
-        to_remove = sorted_l2.pop()
-        k = l2.index(to_remove)
-        l2.pop(k)
-        l2_sizes.pop(k)
-        if sorted_l2:
-            cur_angle = _key(sorted_l2[-1])
-        else:
-            break
-
-    if not l2:
-        while l1:
-            l1.pop()
-        return
-
-    if len(l1) != len(l2):
-        equalize_vert_lengths(
-            (l1, l1_sizes), (l2, l2_sizes), centroid1, centroid2, max_angle=max_angle
-        )
-
-
-def get_affine_transform(
-    fixed: NDBoolMask,
-    moving: NDBoolMask,
-    centroid_fixed: Tuple[int, int],
-    centroid_moving: Tuple[int, int],
-) -> Tuple[
-    NDArray[Shape["3, 3"], Float],
-    NDArray[Shape["3, 3"], Float],
-    NDArray[Shape["3, 3"], Float],
-]:
-    r"""
-    Given 2 dot masks, get the affine transform (as rotation, scale and translation) to
-    apply to the moving one to align it with the fixed one.
-
-    Args:
-        fixed: input fixed mask.
-        moving: input moving mask.
-
-    Returns:
-        Tuple containing the rotation, the scale and the translation 3x3 matrices.
-    """
-    fixed_vert, fixed_sizes = get_vertices(fixed, centroid_fixed)
-    moving_vert, moving_sizes = get_vertices(moving, centroid_moving)
-
-    if fixed_vert and moving_vert:
-        if len(fixed_vert) != len(moving_vert):
-            equalize_vert_lengths(
-                (fixed_vert, fixed_sizes),
-                (moving_vert, moving_sizes),
-                centroid_fixed,
-                centroid_moving,
-            )
-        to_keep = []
-        for k in range(len(fixed_vert)):
-            ratio = fixed_sizes[k] / moving_sizes[k]
-            if 0.9 < ratio < 1.1:
-                to_keep.append(k)
-
-        fixed_vert = [fixed_vert[k] for k in to_keep]
-        moving_vert = [moving_vert[k] for k in to_keep]
-        while len(fixed_vert) > 4:
-            fixed_vert.pop()
-        while len(moving_vert) > 4:
-            moving_vert.pop()
-
-    if not (fixed_vert and moving_vert):
-        return
-
-    fixed_vert = np.array(fixed_vert)
-    moving_vert = np.array(moving_vert)
-
-    if len(fixed_vert) > 1 and len(moving_vert) > 1:
-        rot = get_rotation(fixed_vert, moving_vert)
-        reg_vert = np.concatenate(
-            (moving_vert, [[1] for _ in range(len(fixed_vert))]), axis=1
-        )
-        reg_vert = (rot @ reg_vert.T).T
-        scale = get_scale(fixed_vert, reg_vert[:, :2])
-        reg_vert = (scale @ reg_vert.T).T
-    else:
-        rot = np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1]], dtype=np.float64)
-        scale = np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1]], dtype=np.float64)
-        reg_vert = moving_vert
-    trans = get_translation(fixed_vert, reg_vert[:, :2])
-    return rot, scale, trans
-
-
-def get_centroid(thumb):
-    ii, jj = get_tissue_mask_hsv(rgb2hsv(thumb)).nonzero()
-    centroid = (int(np.median(jj)), int(np.median(ii)))
-    return centroid
+    return thumb
 
 
 def get_coord_transform(
@@ -359,23 +49,25 @@ def get_coord_transform(
         corresponding coords in the IHC slide.
     """
     thumb_level = min(slide_he.level_count, slide_ihc.level_count) - 1
-    thumb_he, mask_he = get_dot_mask(slide_he, thumb_level=thumb_level)
-    thumb_ihc, mask_ihc = get_dot_mask(slide_ihc, thumb_level=thumb_level)
-    centroid_he = get_centroid(thumb_he)
-    centroid_ihc = get_centroid(thumb_ihc)
-    res = get_affine_transform(
-        mask_ihc, mask_he, centroid_ihc, centroid_he
+    thumb_he = get_thumbnail(slide_he, thumb_level=thumb_level)
+    thumb_ihc = get_thumbnail(slide_ihc, thumb_level=thumb_level)
+    thumb_he_g = cv2.cvtColor(thumb_he, cv2.COLOR_RGB2GRAY)
+    thumb_ihc_g = cv2.cvtColor(thumb_ihc, cv2.COLOR_RGB2GRAY)
+
+    he_h, he_w = thumb_he_g.shape
+    ihc_h, ihc_w = thumb_ihc_g.shape
+    thumb_he_g = np.pad(
+        thumb_he_g, ((0, max(0, ihc_h - he_h)), (0, max(0, ihc_w - he_w)))
     )
-    if res is None:
-        return
-    else:
-        rot, scale, trans = res
-    dsr = slide_he.dimensions[1] / mask_he.shape[0]
-    trans[:2, 2] *= dsr
-    affine = trans @ scale @ rot
+    thumb_ihc_g = np.pad(
+        thumb_ihc_g, ((0, max(0, he_h - ihc_h)), (0, max(0, he_w - ihc_w)))
+    )
+    affine, _, _ = phase_cross_correlation(thumb_ihc_g, thumb_he_g)
+    dsr = slide_he.dimensions[1] / thumb_he_g.shape[0]
+    affine = np.array(affine, dtype=int) * dsr
 
     def _transform(x, y):
-        x1, y1, _ = (affine @ np.array([x, y, 1]).T).T
+        y1, x1 = affine + np.array([y, x])
         return Coord(x1, y1)
 
     return _transform
@@ -521,6 +213,116 @@ def convert_to_nifti(base_path: PathLike, path: PathLike, container=None):
     return container
 
 
+def run_historeg_preproc(img, resample=4):
+    img = itk.image_view_from_array(img)
+    h, w = img.shape
+    img.SetDirection(np.array([[-1, 0], [0, -1]]))
+
+    smooth = int(100 / (2 * resample))
+    img = itk.recursive_gaussian_image_filter(img, sigma=smooth)
+    res_w, res_h = int(resample / 100 * w), int(resample / 100 * h)
+    scale = res_h / h
+    input_spacing = itk.spacing(img)
+    input_origin = itk.origin(img)
+    Dimension = img.GetImageDimension()
+    output_spacing = [input_spacing[d] / scale for d in range(Dimension)]
+    output_origin = [
+        input_origin[d] + 0.5 * (output_spacing[d] - input_spacing[d])
+        for d in range(Dimension)
+    ]
+    img = itk.resample_image_filter(
+        img,
+        size=(res_w, res_h),
+        output_spacing=output_spacing,
+        output_origin=output_origin,
+        output_direction=img.GetDirection(),
+    )
+
+    img.SetOrigin((0, 0))
+    img.SetSpacing((1, 1))
+
+    kernel = int(res_h / 40)
+    arr = np.zeros((res_h, res_w), dtype=np.uint8)
+    arr[:kernel, :kernel] = 1
+    arr[:kernel, -kernel:] = 1
+    arr[-kernel:, :kernel] = 1
+    arr[-kernel:, -kernel:] = 1
+    mean = (itk.array_view_from_image(img) * arr).mean().item()
+    std = (itk.array_view_from_image(img) * arr).std().item()
+
+    pad_size = 4 * kernel
+    padded_w, padded_h = res_w + 2 * pad_size, res_h + 2 * pad_size
+    mask = itk.image_view_from_array(np.ones((res_h, res_w), dtype=np.uint8))
+    mask.SetDirection(np.array([[-1, 0], [0, -1]]))
+    mask = itk.constant_pad_image_filter(
+        mask,
+        pad_lower_bound=(pad_size, pad_size),
+        pad_upper_bound=(pad_size, pad_size),
+        constant=0,
+    )
+
+    mask = itk.image_view_from_array(1 - itk.array_view_from_image(mask))
+    mask.SetDirection(np.array([[-1, 0], [0, -1]]))
+    empty_mask = itk.image_view_from_array(
+        np.zeros((padded_h, padded_w), dtype=np.uint8)
+    )
+    empty_mask.SetDirection(np.array([[-1, 0], [0, -1]]))
+    empty_mask = itk.additive_gaussian_noise_image_filter(
+        empty_mask, mean=mean, standard_deviation=std
+    )
+    mask = itk.multiply_image_filter(mask, empty_mask)
+
+    img = itk.constant_pad_image_filter(
+        img,
+        pad_lower_bound=(pad_size, pad_size),
+        pad_upper_bound=(pad_size, pad_size),
+        constant=0,
+    )
+    mask.SetLargestPossibleRegion(img.GetLargestPossibleRegion())
+    img_arr = itk.array_view_from_image(img)
+    img_arr += itk.array_view_from_image(mask)
+    img.SetOrigin((0, 0))
+    w, h = itk.size(img)
+    region = itk.ImageRegion[2]((w, h))
+    img.SetLargestPossibleRegion(region)
+    img.SetRequestedRegionToLargestPossibleRegion()
+    img.SetBufferedRegion(region)
+    img.Update()
+
+    return img
+
+
+def run_historeg_postproc(warp, affine, pad_size, full_size, small_size, resample=4):
+    warp_arr = itk.array_view_from_image(warp)
+    warp = itk.image_from_array(
+        warp_arr[pad_size:-pad_size, pad_size:-pad_size], is_vector=True
+    )
+
+    scale = full_size[1] / small_size
+    input_spacing = itk.spacing(warp)
+    input_origin = itk.origin(warp)
+    output_spacing = [input_spacing[d] / scale for d in range(2)]
+    output_origin = [
+        input_origin[d] + 0.5 * (output_spacing[d] - input_spacing[d]) for d in range(2)
+    ]
+
+    warp = itk.resample_image_filter(
+        warp,
+        size=full_size,
+        output_spacing=output_spacing,
+        output_origin=output_origin,
+        output_direction=warp.GetDirection(),
+    )
+
+    warp.SetOrigin((0, 0))
+    warp.SetSpacing((1, 1))
+    warp_arr = itk.array_view_from_image(warp)
+    warp_arr *= int(100 / resample)
+
+    affine[:2, 2] *= int(100 / resample)
+    return warp, affine
+
+
 def register(
     base_path: PathLike,
     he_H_path: PathLike,
@@ -528,6 +330,7 @@ def register(
     he_path: PathLike,
     ihc_path: PathLike,
     reg_path: PathLike,
+    patch_size: Coord,
     container=None,
     iterations: int = 20000,
     resample: int = 4,
@@ -552,6 +355,8 @@ def register(
         (he_H_path, ihc_H_path, he_path, ihc_path, reg_path),
     )
 
+    (base_path / "historeg").mkdir(exist_ok=True)
+
     if container is None:
         client = docker.from_env()
         container = client.containers.create(
@@ -560,28 +365,62 @@ def register(
             tty=True,
             stdin_open=True,
             auto_remove=False,
-            volumes=[f"{base_path}:/data"],
+            volumes=[f"{base_path.absolute()}:/data"],
         )
         container.start()
 
     with open(base_path / "log", "ab") as f:
-        historeg_cmd = (
-            f"HistoReg -i {iterations} -r {resample} -s1 6 -s2 8 --threads {threads} -f"
-            f" {he_H_path} -m {ihc_H_path} -o /data/historeg"
+        small_size = int((resample / 100) * patch_size.y)
+        kernel = int(small_size / 40)
+        offset = int((small_size + 4 * kernel) / 10)
+        pad_size = 4 * kernel
+
+        affine_cmd = (
+            f"greedy -a -m NCC {kernel}x{kernel} -n 100x50x10 -threads {threads} "
+            f"-search {iterations} 5 {offset} -i {he_H_path} {ihc_H_path} -o "
+            "/data/historeg/small_affine.mat"
         )
-        # f.write(f"{datetime.now()} - Starting HistoReg...\n")
-        res = container.exec_run(historeg_cmd, stream=True)
+        res = container.exec_run(affine_cmd, stream=True)
         for chunk in res.output:
             f.write(chunk)
-        # f.write(f"{datetime.now()} - HistoReg finished.\n")
 
-        tfm_path = Path(
-            f"/data/historeg/{ihc_H_path.stem}_registered_to_{he_H_path.stem}"
-            "/metrics/full_resolution"
+        diffeo_cmd = (
+            f"greedy -d 2 -it /data/historeg/small_affine.mat -threads {threads} -m NCC"
+            f" {kernel}x{kernel} -n 100x50x10 -s 6vox 8vox -i {he_H_path} {ihc_H_path} "
+            "-o /data/historeg/small_warp.nii.gz"
         )
+        res = container.exec_run(diffeo_cmd, stream=True)
+        for chunk in res.output:
+            f.write(chunk)
+
+        warp = itk.imread(str(base_path / "historeg/small_warp.nii.gz"))
+        warp = itk.image_view_from_array(
+            itk.array_view_from_image(warp), is_vector=True
+        )
+        with open(base_path / "historeg/small_affine.mat") as f1:
+            affine = f1.read()
+            affine = [
+                [float(x) for x in row.strip().split(" ")]
+                for row in affine.strip().split("\n")
+            ]
+            affine = np.array(affine)
+
+        warp, affine = run_historeg_postproc(
+            warp, affine, pad_size, patch_size, small_size, resample=resample
+        )
+
+        itk.imwrite(warp, base_path / "historeg/big_warp.nii.gz")
+
+        with open(base_path / "historeg/big_affine.mat", "w") as f1:
+            f1.write(
+                "\n".join(
+                    [" ".join([f"{x:.6f}" for x in row]) for row in affine.tolist()]
+                )
+            )
+
         greedy_cmd = (
             f"greedy -d 2 -threads {threads} -rf {he_path} -rm {ihc_path} {reg_path} -r"
-            f" {tfm_path/'big_warp.nii.gz'} {tfm_path/'Affine.mat'}"
+            f" /data/historeg/big_warp.nii.gz /data/historeg/big_affine.mat"
         )
         # f.write(f"{datetime.now()} - Starting Greedy...\n")
         res = container.exec_run(greedy_cmd, stream=True)
@@ -636,11 +475,11 @@ def full_registration(
     if not base_path.exists():
         base_path.mkdir()
 
-    he_H_path = base_path / "he_H.png"
-    ihc_H_path = base_path / "ihc_H.png"
-    he_path = base_path / "he.png"
-    ihc_path = base_path / "ihc.png"
-    reg_path = base_path / "ihc_warped.png"
+    he_H_path = base_path / "he_H.nii.gz"
+    ihc_H_path = base_path / "ihc_H.nii.gz"
+    he_path = base_path / "he.nii.gz"
+    ihc_path = base_path / "ihc.nii.gz"
+    reg_path = base_path / "ihc_warped.nii.gz"
 
     he, he_G, he_H = get_input_images(slide_he, patch_he)
     ihc, ihc_G, ihc_H = get_input_images(slide_ihc, patch_ihc)
@@ -659,27 +498,33 @@ def full_registration(
         return False
 
     # he_H, ihc_H = equalize_contrasts(he_H, ihc_H, he_G, ihc_G)
+    resample = min(50, int(100000 / patch_he.size[0]))
 
-    imsave(he_H_path, he_H)
-    imsave(ihc_H_path, ihc_H)
+    he_H = run_historeg_preproc(he_H, resample=resample)
+    ihc_H = run_historeg_preproc(ihc_H, resample=resample)
 
-    imsave(he_path, he)
-    imsave(ihc_path, ihc)
-    container = convert_to_nifti(base_path, he_path)
-    container = convert_to_nifti(base_path, ihc_path, container=container)
+    print(he_H.GetOrigin(), ihc_H.GetOrigin())
+    itk.imwrite(he_H, he_H_path)
+    itk.imwrite(ihc_H, ihc_H_path)
+
+    imsave(he_path.with_suffix("").with_suffix(".png"), he)
+    he = itk.image_view_from_array(he, is_vector=True)
+    he.SetDirection(np.array([[-1, 0], [0, -1]]))
+    itk.imwrite(he, he_path)
+    ihc = itk.image_view_from_array(ihc, is_vector=True)
+    ihc.SetDirection(np.array([[-1, 0], [0, -1]]))
+    itk.imwrite(ihc, ihc_path)
 
     print(f"[{pid}] Starting registration...")
-
-    resample = min(50, int(100000 / patch_he.size[0]))
 
     container = register(
         base_path,
         he_H_path,
         ihc_H_path,
-        he_path.with_suffix(".nii.gz"),
-        ihc_path.with_suffix(".nii.gz"),
-        reg_path.with_suffix(".nii.gz"),
-        container=container,
+        he_path,
+        ihc_path,
+        reg_path,
+        patch_he.size,
         resample=resample,
         iterations=iterations,
         threads=threads,

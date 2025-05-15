@@ -20,8 +20,8 @@ for file_path in $he_slide_folder/*.svs; do
   echo $filestem
   mkdir -p $slide_folder/HE
   mkdir -p $slide_folder/IHC
-  ln $file_path $slide_folder/HE/$filename
-  ln $ihc_slide_folder/$filename $slide_folder/IHC/$filename
+  ln -f $file_path $slide_folder/HE/$filename
+  ln -f $ihc_slide_folder/$filename $slide_folder/IHC/$filename
   dvc repro -f -s mask_extraction >> $HOME/mask_extraction_logs 2>&1 
   if [ ! $? -eq 0 ]; then
     dvc commit -f mask_extraction

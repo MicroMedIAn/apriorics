@@ -4,48 +4,49 @@ stages:
     cmd: python ../../../scripts/utils/file_transfer.py --data_path ../data --ihc_type
       AE1AE3 --mapping_file ../../../ihc_mapping.json --mask_extension .tif --remote_path
       /media/AprioricsSlides/ --slide_extension .svs --add_tree --clean_previous --import_ihc
-      --extension .svs --rel_path slides --remote_rel_path .
+      --import_file ../../../file_lists/AE1AE3 --extension .svs --rel_path slides
+      --remote_rel_path .
     outs:
     - path: ../data/slides
       hash: md5
-      md5: d751713988987e9331980363e24189ce.dir
-      size: 0
-      nfiles: 0
+      md5: 91e820ee81bfcef8a36b8b25ff9ee791.dir
+      size: 13001716190
+      nfiles: 10
   mask_extraction:
     cmd: python ../../../scripts/mask_extraction/register_extract_polygons_masks_mp.py
       --data_path ../data --ihc_type AE1AE3 --mapping_file ../../../ihc_mapping.json
       --mask_extension .tif --remote_path /media/AprioricsSlides/ --slide_extension
-      .svs --binary_op closing --dab_thr 0.03 --object_min_size 1000 --overlap 0.3
-      --psize 2000 --radius 10 --geojson_path geojsons --hovernet_path hovernet_gpkgs
-      --log_path registration_geojsons --slide_path slides --mask_path masks --wkt_path
-      wkts
+      .svs --binary_op closing --dab_thr 0.03 --object_min_size 1000 --hole_min_size
+      50000 --overlap 0.3 --num_workers 30 --psize 5000 --radius 10 --geojson_path
+      geojsons_new --log_path registration_geojsons_new --main_slide_path slides --slide_path
+      slides_tmp --mask_path masks_new
     deps:
     - path: ../data/slides
       hash: md5
-      md5: d751713988987e9331980363e24189ce.dir
-      size: 0
-      nfiles: 0
+      md5: 91e820ee81bfcef8a36b8b25ff9ee791.dir
+      size: 13001716190
+      nfiles: 10
     outs:
-    - path: ../data/geojsons
+    - path: ../data/geojsons_new
       hash: md5
-      md5: 24df5d8de42d67d0ecfbdb843f2fe3e0.dir
-      size: 21441828907
-      nfiles: 545
-    - path: ../data/masks
+      md5: 813d0491c0242011b546d220542e19e5.dir
+      size: 472019334
+      nfiles: 5
+    - path: ../data/masks_new
       hash: md5
-      md5: 9c923b617991c71debb57c3f136ad5be.dir
-      size: 547157558083
-      nfiles: 546
-    - path: ../data/registration_geojsons
+      md5: 0653d68381528671e0ca43a291dada18.dir
+      size: 4584562803
+      nfiles: 5
+    - path: ../data/registration_geojsons_new
       hash: md5
-      md5: d751713988987e9331980363e24189ce.dir
-      size: 0
-      nfiles: 0
+      md5: 67b7e0b5902d20faccc74518a2ef0b3b.dir
+      size: 45454
+      nfiles: 5
   geojson_upload:
-    cmd: rsync -au ../data/geojsons /media/AprioricsSlides//geojsons/AE1AE3
+    cmd: rsync -au ../data/geojsons_new/ /media/AprioricsSlides//geojsons_new/AE1AE3/
     deps:
-    - path: ../data/geojsons
+    - path: ../data/geojsons_new
       hash: md5
-      md5: 24df5d8de42d67d0ecfbdb843f2fe3e0.dir
-      size: 21441828907
-      nfiles: 545
+      md5: 813d0491c0242011b546d220542e19e5.dir
+      size: 472019334
+      nfiles: 5

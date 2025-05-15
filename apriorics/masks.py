@@ -192,28 +192,41 @@ def get_mask_AE1AE3(
     he_hue = rgb2hsv(he)[:, :, 0]
     ihc = np.asarray(ihc)
     ihc_DAB = rgb2hed(ihc)[:, :, 2]
-    ihc_s = rgb2hsv(ihc)[:, :, 1]
-    mask_he = binary_closing(
-        remove_small_objects(
-            remove_small_holes((he_H > 0.005) & (he_hue > 0.69), area_threshold=10**4),
-            min_size=500,
+    ihc_hsv = rgb2hsv(ihc)
+    ihc_h = ihc_hsv[:, :, 0]
+    ihc_s = ihc_hsv[:, :, 1]
+    ihc_v = ihc_hsv[:, :, 2]
+
+    mask_he1 = remove_small_objects((he_H > 0.015) & (he_hue > 0.69), min_size=50)
+    mask_he2 = get_mask_ink(he)
+    mask_he = remove_small_objects(
+        remove_small_holes(
+            binary_closing(mask_he1 & ~mask_he2, footprint=disk(10)),
+            area_threshold=10**3,
         ),
-        footprint=disk(10),
+        min_size=500,
     )
-    mask_ihc = binary_closing(
-        remove_small_objects(
-            remove_small_holes((ihc_DAB > 0.03) & (ihc_s > 0.1), area_threshold=10**4),
-            min_size=500,
+
+    mask_ihc = remove_small_objects(
+        remove_small_holes(
+            binary_closing(
+                (ihc_DAB > 0.03) & (ihc_s > 0.1) & (ihc_v < 0.85) & (ihc_h < 0.1),
+                footprint=disk(10),
+            ),
+            area_threshold=10**3,
         ),
-        footprint=disk(10),
+        min_size=500,
     )
-    mask_he_DAB = binary_closing(
-        remove_small_objects(
-            remove_small_holes(he_DAB > 0.03, area_threshold=10**4), min_size=500
-        ),
-        footprint=disk(10),
+
+    mask_he_DAB = remove_small_holes(
+        remove_small_objects(he_DAB > 0.05, min_size=100),
+        area_threshold=1000,
     )
-    mask = remove_small_objects(mask_he & ~mask_he_DAB & mask_ihc, min_size=500)
+
+    mask = remove_small_objects(
+        remove_small_holes(mask_he & ~mask_he_DAB & mask_ihc, area_threshold=10**3),
+        min_size=500,
+    )
     return mask
 
 
@@ -292,7 +305,7 @@ def get_mask_CD3CD20(
 
     mask_he_DAB = remove_small_objects(
         remove_small_holes(
-            binary_closing(he_DAB > 0.03, footprint=disk(2)), area_threshold=300
+            binary_closing(he_DAB > 0.07, footprint=disk(2)), area_threshold=300
         ),
         min_size=50,
     )

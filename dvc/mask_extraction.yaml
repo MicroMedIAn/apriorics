@@ -30,6 +30,6 @@ stages:
 
   geojson_upload:
     cmd: >-
-      rsync -au ${base.data_path}/${local.geojson_path} ${base.remote_path}/${remote.geojson_path}/${base.ihc_type}
+      rsync -au ${base.data_path}/${local.geojson_path}/ ${base.remote_path}/${remote.geojson_path}/${base.ihc_type}/
     deps:
       - ${base.data_path}/${local.geojson_path}
