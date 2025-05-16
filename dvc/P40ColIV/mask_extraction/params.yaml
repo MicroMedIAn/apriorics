@@ -9,7 +9,8 @@ local:
   geojson_path: geojsons
   hovernet_path: hovernet_gpkgs
   log_path: registration_geojsons
-  slide_path: slides
+  main_slide_path: slides
+  slide_path: slides_tmp
   mask_path: masks
 mask_extraction:
   binary_op: none
