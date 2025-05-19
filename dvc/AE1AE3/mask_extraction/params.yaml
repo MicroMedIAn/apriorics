@@ -11,6 +11,7 @@ local:
   main_slide_path: slides
   slide_path: slides_tmp
   mask_path: masks_new
+  tissue_path: tissue_geojsons
 mask_extraction:
   binary_op: closing
   dab_thr: 0.03

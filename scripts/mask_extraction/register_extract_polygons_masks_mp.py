@@ -156,6 +156,9 @@ parser.add_argument(
 parser.add_argument(
     "--hole_min_size", type=int, help="Minimum size for holes in polygons. Optional."
 )
+parser.add_argument(
+    "--tissue_path", type=Path, help="Path to folder containing tissue mask geojsons."
+)
 
 
 def get_filefilter(slidefile):
@@ -175,15 +178,28 @@ def get_filefilter(slidefile):
     return _filter
 
 
-def get_patch_iter(slide_he, psize, interval, hovernet_path):
+def get_patch_iter(slide_he, psize, interval, hovernet_path, tissue_path):
+    if tissue_path is not None:
+        tissue_gs = geopandas.read_file(tissue_path, engine="pyogrio", use_arrow=True)[
+            "geometry"
+        ]
     for patch in slide_rois_no_image(
         slide_he,
         0,
         (psize, psize),
         (interval, interval),
         thumb_size=5000,
-        slide_filters=[filter_thumbnail_mask_extraction],
+        slide_filters=(
+            [filter_thumbnail_mask_extraction] if tissue_path is None else None
+        ),
     ):
+        if (
+            tissue_path is not None
+            and not tissue_gs.intersects(
+                box(*patch.position, *(patch.position + patch.size))
+            ).any()
+        ):
+            continue
         if hovernet_path is not None:
             try:
                 fgdf = geopandas.read_file(
@@ -390,6 +406,11 @@ def main(args):
         else:
             hovernetfile = None
 
+        if args.tissue_path is not None:
+            tissuefile = args.data_path / args.tissue_path / f"{hefile.stem}.geojson"
+        else:
+            tissuefile = None
+
         maskpath = maskfolder / hefile.relative_to(slidefolder / "HE").with_suffix(
             ".png"
         )
@@ -415,10 +436,7 @@ def main(args):
             initargs=(slide_he, slide_ihc, full_mask),
         ) as pool:
             patch_iter = get_patch_iter(
-                slide_he,
-                args.psize,
-                interval,
-                hovernetfile,
+                slide_he, args.psize, interval, hovernetfile, tissuefile
             )
             all_polygons = pool.map(_register_extract_mask, patch_iter)
             pool.close()

@@ -189,7 +189,9 @@ def get_mask_AE1AE3(
     he_H = rgb2hed(he)
     he_DAB = he_H[:, :, 2]
     he_H = he_H[:, :, 0]
-    he_hue = rgb2hsv(he)[:, :, 0]
+    he_hsv = rgb2hsv(he)
+    he_hue = he_hsv[:, :, 0]
+    he_s = he_hsv[:, :, 1]
     ihc = np.asarray(ihc)
     ihc_DAB = rgb2hed(ihc)[:, :, 2]
     ihc_hsv = rgb2hsv(ihc)
@@ -197,11 +199,16 @@ def get_mask_AE1AE3(
     ihc_s = ihc_hsv[:, :, 1]
     ihc_v = ihc_hsv[:, :, 2]
 
-    mask_he1 = remove_small_objects((he_H > 0.015) & (he_hue > 0.69), min_size=50)
+    mask_he1 = remove_small_objects(
+        (he_H > 0.01)
+        & (he_hue > 0.69)
+        & ((he_s > 0.15) | ((he_s > 0.06) & (he_s > 0.75))),
+        min_size=50,
+    )
     mask_he2 = get_mask_ink(he)
     mask_he = remove_small_objects(
         remove_small_holes(
-            binary_closing(mask_he1 & ~mask_he2, footprint=disk(10)),
+            binary_closing(mask_he1 & ~mask_he2, footprint=disk(15)),
             area_threshold=10**3,
         ),
         min_size=500,
