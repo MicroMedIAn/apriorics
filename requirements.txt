@@ -1,4 +1,4 @@
-pathaia==0.2.4
+pathaia==0.2.5a0
 pillow==9.0.0
 numpy==1.24.4
 cucim-cu12
