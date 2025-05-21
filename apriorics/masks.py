@@ -11,6 +11,7 @@ from skimage.color import rgb2hed, rgb2hsv
 from skimage.filters import threshold_otsu
 from skimage.morphology import (
     binary_closing,
+    binary_dilation,
     disk,
     label,
     remove_small_holes,
@@ -167,7 +168,9 @@ def get_mask_ink(img):
     for c, r in enumerate(ranges):
         a, b = r
         mask &= (img[..., c] > a) & (img[..., c] < b)
-    mask = flood_mask(img, remove_small_objects(mask, min_size=10), 5)
+    mask = binary_dilation(
+        flood_mask(img, remove_small_objects(mask, min_size=10), 5), footprint=disk(15)
+    )
     return mask
 
 
@@ -192,6 +195,7 @@ def get_mask_AE1AE3(
     he_hsv = rgb2hsv(he)
     he_hue = he_hsv[:, :, 0]
     he_s = he_hsv[:, :, 1]
+    he_v = he_hsv[:, :, 2]
     ihc = np.asarray(ihc)
     ihc_DAB = rgb2hed(ihc)[:, :, 2]
     ihc_hsv = rgb2hsv(ihc)
@@ -202,14 +206,16 @@ def get_mask_AE1AE3(
     mask_he1 = remove_small_objects(
         (he_H > 0.01)
         & (he_hue > 0.69)
-        & ((he_s > 0.15) | ((he_s > 0.06) & (he_s > 0.75))),
-        min_size=50,
+        & ((he_s > 0.15) | ((he_s > 0.06) & (he_hue > 0.75)))
+        & (he_hue < 0.9)
+        & (he_v > 0.3),
+        min_size=500,
     )
     mask_he2 = get_mask_ink(he)
     mask_he = remove_small_objects(
         remove_small_holes(
             binary_closing(mask_he1 & ~mask_he2, footprint=disk(15)),
-            area_threshold=10**3,
+            area_threshold=1000,
         ),
         min_size=500,
     )
@@ -218,15 +224,15 @@ def get_mask_AE1AE3(
         remove_small_holes(
             binary_closing(
                 (ihc_DAB > 0.03) & (ihc_s > 0.1) & (ihc_v < 0.85) & (ihc_h < 0.1),
-                footprint=disk(10),
+                footprint=disk(15),
             ),
-            area_threshold=10**3,
+            area_threshold=1000,
         ),
         min_size=500,
     )
 
     mask_he_DAB = remove_small_holes(
-        remove_small_objects(he_DAB > 0.05, min_size=100),
+        remove_small_objects(he_DAB > 0.07, min_size=100),
         area_threshold=1000,
     )
 
