@@ -387,7 +387,7 @@ def main(args):
     if args.hovernet_path is not None:
         hovernetfolder = args.data_path / args.hovernet_path
         hovernetfiles = get_files(
-            hovernetfolder / args.ihc_type, extensions=".gpkg", recurse=False
+            hovernetfolder, extensions=".gpkg", recurse=False
         )
         hovernetnames = OrderedSet(hovernetfiles.map(lambda x: x.stem.split("-")[0]))
         inter = inter & hovernetnames
