@@ -12,13 +12,14 @@ local:
   main_slide_path: slides
   slide_path: slides_tmp
   mask_path: masks
+  tissue_path: tissue_geojsons
 mask_extraction:
   binary_op: none
   dab_thr: 0.015
   iou_thr: 0.05
   nuc_max_siz: 40
-  num_workers: 20
-  object_min-size: 50
+  num_workers: 15
+  object_min_size: 50
 remote:
   geojson_path: geojsons
   mask_path: masks

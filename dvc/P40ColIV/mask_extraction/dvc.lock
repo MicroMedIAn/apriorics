@@ -9,34 +9,39 @@ stages:
     outs:
     - path: ../data/slides
       hash: md5
-      md5: 0494abbc20a44c25f15ca37d225bb8fd.dir
-      size: 13578166730
-      nfiles: 8
+      md5: 03a4a4c34e28495a80039b5adf86ac4c.dir
+      size: 500535220546
+      nfiles: 320
   mask_extraction:
     cmd: python ../../../scripts/mask_extraction/register_extract_polygons_masks_mp.py
-      --data_path /data/anapath/AprioricsSlides --ihc_type P40ColIV --mapping_file
-      ../../../ihc_mapping.json --mask_extension .tif --remote_path /media/AprioricsSlides
-      --slide_extension .svs --dab_thr 0.015 --object_min-size 50 --binary_op none
-      --num_workers 20 --iou_thr 0.05 --nuc_max_siz 40 --mask_path masks --main_slide_path
-      slides --slide_path slides_tmp --geojson_path geojsons --log_path registration_geojsons
-      --hovernet_path hovernet_gpkgs
+      --data_path ../data --ihc_type P40ColIV --mapping_file ../../../ihc_mapping.json
+      --mask_extension .tif --remote_path /media/AprioricsSlides --slide_extension
+      .svs --binary_op none --dab_thr 0.015 --iou_thr 0.05 --nuc_max_siz 40 --num_workers
+      20 --object_min-size 50 --geojson_path geojsons --hovernet_path hovernet_gpkgs
+      --log_path registration_geojsons --main_slide_path slides --slide_path slides_tmp
+      --mask_path masks --tissue_path tissue_geojsons
     deps:
-    - path: .downloaded_slides.csv
-      md5: 82005b91aae828cc9ae1ecdd5bdddc6d
-      size: 706
+    - path: ../data/slides
+      hash: md5
+      md5: 03a4a4c34e28495a80039b5adf86ac4c.dir
+      size: 500535220546
+      nfiles: 320
     outs:
-    - path: /data/anapath/AprioricsSlides/geojsons/P40ColIV
-      md5: 77ac47b3ea1f04538ab9963a174e9464.dir
-      size: 38998311
-      nfiles: 4
-    - path: /data/anapath/AprioricsSlides/masks/P40ColIV
-      md5: df0041354107844edc704545e387967c.dir
-      size: 2224333104
-      nfiles: 4
-    - path: /data/anapath/AprioricsSlides/registration_geojsons/P40ColIV
-      md5: 838a63c0ceb8113021fd8a360f544b29.dir
-      size: 32122
-      nfiles: 4
+    - path: ../data/geojsons
+      hash: md5
+      md5: 64d20c663224f1e937b403ea3915bc5a.dir
+      size: 21684790
+      nfiles: 5
+    - path: ../data/masks
+      hash: md5
+      md5: bb8fa2a064e8a924c4d1aeb27e32a456.dir
+      size: 2349824967
+      nfiles: 5
+    - path: ../data/registration_geojsons
+      hash: md5
+      md5: 12a48de3e43d16747a3a1d45a42b70eb.dir
+      size: 19898
+      nfiles: 5
   geojson_upload:
     cmd: rsync -au ../data/geojsons /media/AprioricsSlides/geojsons/P40ColIV
     deps:
