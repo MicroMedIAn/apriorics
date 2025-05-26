@@ -8,8 +8,6 @@ ihc_slide_folder=$data_path/$(yq .local.main_slide_path params.yaml)/IHC
 slide_folder=$data_path/$(yq .local.slide_path params.yaml)
 outfolder=$data_path/$(yq .local.mask_path params.yaml)/HE
 mask_extension=$(yq .base.mask_extension params.yaml)
-eval "$(conda shell.bash hook)"
-conda activate apriorics
 for file_path in $he_slide_folder/*.svs; do
   filename=$(basename $file_path)
   filestem=${filename%.*}
@@ -22,9 +20,9 @@ for file_path in $he_slide_folder/*.svs; do
   mkdir -p $slide_folder/IHC
   ln -f $file_path $slide_folder/HE/$filename
   ln -f $ihc_slide_folder/$filename $slide_folder/IHC/$filename
-  dvc repro -f -s mask_extraction >> $HOME/mask_extraction_logs 2>&1 
+  uv run dvc repro -f -s mask_extraction >> $HOME/mask_extraction_logs 2>&1 
   if [ ! $? -eq 0 ]; then
-    dvc commit -f mask_extraction
+    uv run dvc commit -f mask_extraction
   fi
   rm $slide_folder/HE/$filename
   rm $slide_folder/IHC/$filename

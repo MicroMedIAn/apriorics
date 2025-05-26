@@ -87,7 +87,7 @@ wheels = [
 
 [[package]]
 name = "albumentations"
-version = "1.3.1"
+version = "1.1.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "numpy" },
@@ -97,9 +97,9 @@ dependencies = [
     { name = "scikit-image" },
     { name = "scipy" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/14/d6/8dd5b690d28a332a0b2c3179a345808b5d4c7ad5ddc079b7e116098dff35/albumentations-1.3.1.tar.gz", hash = "sha256:a6a38388fe546c568071e8c82f414498e86c9ed03c08b58e7a88b31cf7a244c6", size = 176371, upload-time = "2023-06-10T07:44:32.36Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/c8/a2/ab0ddadd960b4caf824063783d24174119cbddae409ff99fbe6fd45c63ec/albumentations-1.1.0.tar.gz", hash = "sha256:60b067b3093908bcc52adb2aa5d44f57ebdbb8ab57a47b0b42f3dc1d3b1ce824", size = 178928, upload-time = "2021-10-04T09:30:35.191Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/9b/f6/c486cedb4f75147232f32ec4c97026714cfef7c7e247a1f0427bc5489f66/albumentations-1.3.1-py3-none-any.whl", hash = "sha256:6b641d13733181d9ecdc29550e6ad580d1bfa9d25e2213a66940062f25e291bd", size = 125706, upload-time = "2023-06-10T07:44:30.373Z" },
+    { url = "https://files.pythonhosted.org/packages/75/27/a8b0a738f8423b7ef9d0c9f8e73d5867395dbdae563c1655e9548cf700b9/albumentations-1.1.0-py3-none-any.whl", hash = "sha256:6acf78a5f9504bd36c4a8e18eed29f7103c2fa6a7ba5be399c6088820cc88a8a", size = 102435, upload-time = "2021-10-04T09:30:33.476Z" },
 ]
 
 [[package]]
@@ -154,11 +154,14 @@ dependencies = [
     { name = "matplotlib" },
     { name = "nptyping" },
     { name = "numpy" },
+    { name = "opencv-contrib-python" },
     { name = "opencv-python-headless" },
     { name = "openslide-python" },
     { name = "pandas" },
     { name = "pathaia" },
     { name = "pillow" },
+    { name = "pyarrow" },
+    { name = "pyogrio" },
     { name = "pytorch-lightning" },
     { name = "rasterio" },
     { name = "requests" },
@@ -179,7 +182,7 @@ dependencies = [
 
 [package.metadata]
 requires-dist = [
-    { name = "albumentations", specifier = ">=1.1,<2.0" },
+    { name = "albumentations", specifier = ">=1.1,<1.2" },
     { name = "comet-ml", specifier = ">=3.26,<4.0" },
     { name = "cucim-cu12", specifier = ">=24.8.0,<25.0.0" },
     { name = "cupy-cuda12x", specifier = ">=13.4.1,<14.0.0" },
@@ -191,11 +194,14 @@ requires-dist = [
     { name = "matplotlib", specifier = ">=3.5,<4.0" },
     { name = "nptyping", specifier = ">=2.0.0,<3.0.0" },
     { name = "numpy", specifier = ">=1.22,<2.0" },
+    { name = "opencv-contrib-python", specifier = "~=4.5.5.62" },
     { name = "opencv-python-headless", specifier = ">=4.5.5.62,<4.6.0.0" },
     { name = "openslide-python", specifier = "==1.1.2" },
     { name = "pandas", specifier = ">=2.2.2,<3.0.0" },
-    { name = "pathaia", specifier = "==0.2.5a0" },
+    { name = "pathaia", specifier = "==0.2.6" },
     { name = "pillow", specifier = ">=9.0,<10.0" },
+    { name = "pyarrow", specifier = "~=17.0.0" },
+    { name = "pyogrio", specifier = "~=0.9.0" },
     { name = "pytorch-lightning", specifier = ">=1.5.7,<2.0.0" },
     { name = "rasterio", specifier = ">=1.2.10,<2.0.0" },
     { name = "requests", specifier = "==2.31.0" },
@@ -1484,20 +1490,20 @@ wheels = [
 ]
 
 [[package]]
-name = "opencv-python"
-version = "4.11.0.86"
+name = "opencv-contrib-python"
+version = "4.5.5.64"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "numpy" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/17/06/68c27a523103dad5837dc5b87e71285280c4f098c60e4fe8a8db6486ab09/opencv-python-4.11.0.86.tar.gz", hash = "sha256:03d60ccae62304860d232272e4a4fda93c39d595780cb40b161b310244b736a4", size = 95171956, upload-time = "2025-01-16T13:52:24.737Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/1c/c0/67ce42700579df6579864760bfa89520154e7f01b1fcbe19bf0a10dfb0de/opencv-contrib-python-4.5.5.64.tar.gz", hash = "sha256:c4ff7cb9c856af521982b54602707a61f8dae8cc28f5949bf1e3d0453d08a9f0", size = 150394015, upload-time = "2022-03-09T05:50:16.362Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/05/4d/53b30a2a3ac1f75f65a59eb29cf2ee7207ce64867db47036ad61743d5a23/opencv_python-4.11.0.86-cp37-abi3-macosx_13_0_arm64.whl", hash = "sha256:432f67c223f1dc2824f5e73cdfcd9db0efc8710647d4e813012195dc9122a52a", size = 37326322, upload-time = "2025-01-16T13:52:25.887Z" },
-    { url = "https://files.pythonhosted.org/packages/3b/84/0a67490741867eacdfa37bc18df96e08a9d579583b419010d7f3da8ff503/opencv_python-4.11.0.86-cp37-abi3-macosx_13_0_x86_64.whl", hash = "sha256:9d05ef13d23fe97f575153558653e2d6e87103995d54e6a35db3f282fe1f9c66", size = 56723197, upload-time = "2025-01-16T13:55:21.222Z" },
-    { url = "https://files.pythonhosted.org/packages/f3/bd/29c126788da65c1fb2b5fb621b7fed0ed5f9122aa22a0868c5e2c15c6d23/opencv_python-4.11.0.86-cp37-abi3-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:1b92ae2c8852208817e6776ba1ea0d6b1e0a1b5431e971a2a0ddd2a8cc398202", size = 42230439, upload-time = "2025-01-16T13:51:35.822Z" },
-    { url = "https://files.pythonhosted.org/packages/2c/8b/90eb44a40476fa0e71e05a0283947cfd74a5d36121a11d926ad6f3193cc4/opencv_python-4.11.0.86-cp37-abi3-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:6b02611523803495003bd87362db3e1d2a0454a6a63025dc6658a9830570aa0d", size = 62986597, upload-time = "2025-01-16T13:52:08.836Z" },
-    { url = "https://files.pythonhosted.org/packages/fb/d7/1d5941a9dde095468b288d989ff6539dd69cd429dbf1b9e839013d21b6f0/opencv_python-4.11.0.86-cp37-abi3-win32.whl", hash = "sha256:810549cb2a4aedaa84ad9a1c92fbfdfc14090e2749cedf2c1589ad8359aa169b", size = 29384337, upload-time = "2025-01-16T13:52:13.549Z" },
-    { url = "https://files.pythonhosted.org/packages/a4/7d/f1c30a92854540bf789e9cd5dde7ef49bbe63f855b85a2e6b3db8135c591/opencv_python-4.11.0.86-cp37-abi3-win_amd64.whl", hash = "sha256:085ad9b77c18853ea66283e98affefe2de8cc4c1f43eda4c100cf9b2721142ec", size = 39488044, upload-time = "2025-01-16T13:52:21.928Z" },
+    { url = "https://files.pythonhosted.org/packages/6f/60/afa0e03209acfb6ddfe00e4af57d39bb2e9319280c000102f96f3737aedd/opencv_contrib_python-4.5.5.64-cp36-abi3-macosx_10_15_x86_64.whl", hash = "sha256:aff6bcc6d12e664af16be07a583f6a6a637d6e17784bd06abfb07573807a199e", size = 55881671, upload-time = "2022-03-09T05:49:10.051Z" },
+    { url = "https://files.pythonhosted.org/packages/a3/7e/db6aa6f38a35f9c5a09b69d326e3544193908440104efff2650fc0cb3158/opencv_contrib_python-4.5.5.64-cp36-abi3-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:4179b78d8c1eb279fcb2cbb41e6cdb3a127ae5d96c39241ef88dab3382e56da1", size = 44936561, upload-time = "2022-03-09T05:48:18.264Z" },
+    { url = "https://files.pythonhosted.org/packages/91/20/f774cd7d4a68a0d243716103e232c587bb3c9b7034d93c91d52eda01a6e4/opencv_contrib_python-4.5.5.64-cp36-abi3-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:4544b8b03dc50fea42f67013cdff5b74a326f7631616055c2a2e998fef652e0f", size = 66746063, upload-time = "2022-03-09T05:50:09.816Z" },
+    { url = "https://files.pythonhosted.org/packages/5b/79/38af7af03d51a413f1d09ae26f954011f227418e4729a010985a284060a4/opencv_contrib_python-4.5.5.64-cp36-abi3-win32.whl", hash = "sha256:8381ab5952724719c982e4b8061fbda9ceae5b01f3e2a32beec30b5dd9f74f3f", size = 31955596, upload-time = "2022-03-09T05:51:00.236Z" },
+    { url = "https://files.pythonhosted.org/packages/2e/63/c02ffce9f182dd77fad7ee1f333a6a2aca1a5a2c14a683d30b5d2bd8d8db/opencv_contrib_python-4.5.5.64-cp36-abi3-win_amd64.whl", hash = "sha256:fc2aa1f3abb564832c1bc289b1d83f491dd249e640b78a30e9cc1831ebbf4410", size = 42247038, upload-time = "2022-03-09T05:51:04.342Z" },
+    { url = "https://files.pythonhosted.org/packages/ea/44/a86c7c36b80499f386ff16b1832ab2b634c6e4cec660c6aa6456137ff04d/opencv_contrib_python-4.5.5.64-cp37-abi3-macosx_11_0_arm64.whl", hash = "sha256:b54c750ad88eba0e35b09c9286d6d2a1be8d8a6925b1d7e1e487df2396e74397", size = 38724437, upload-time = "2022-03-09T05:47:51.227Z" },
 ]
 
 [[package]]
@@ -1592,7 +1598,7 @@ wheels = [
 
 [[package]]
 name = "pathaia"
-version = "0.2.5a0"
+version = "0.2.6"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "dataclasses" },
@@ -1600,7 +1606,7 @@ dependencies = [
     { name = "matplotlib" },
     { name = "nptyping" },
     { name = "numpy" },
-    { name = "opencv-python" },
+    { name = "opencv-python-headless" },
     { name = "openslide-python" },
     { name = "ordered-set" },
     { name = "pandas" },
@@ -1610,9 +1616,9 @@ dependencies = [
     { name = "sortedcontainers" },
     { name = "tqdm" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/ef/07/dadd5e6224e084c0583e67c4d2e6ac5d155d724d53c07044a84ac8efcafe/pathaia-0.2.5a0.tar.gz", hash = "sha256:d997aa57e6fcf579f778152106fb7fb41a55c8f153e1172d2a20157bd2305380", size = 57195, upload-time = "2025-05-15T15:31:11.619Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/19/c6/1dd799295414b3c26cfd8b3f0020c84f48293d3c58826c5eb9c9f8b39562/pathaia-0.2.6.tar.gz", hash = "sha256:672b894fa600ce93a88bdc5c8c19a6de31f5b81d004a77966fdeb41fa0064b4a", size = 57187, upload-time = "2025-05-26T09:55:08.092Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/f9/08/472c18f185c05bc48313238a5dcd1fa0e075e01ca9de31a825e32ec58277/pathaia-0.2.5a0-py3-none-any.whl", hash = "sha256:381ea881e49da9c7328dad0099642d72e392804714c8c30d6ed47a4229bc25e4", size = 64688, upload-time = "2025-05-15T15:31:10.536Z" },
+    { url = "https://files.pythonhosted.org/packages/47/9b/87cd767815b24cefb1034a4d46a49f8fda5b1c89f4847d4442210e4efb87/pathaia-0.2.6-py3-none-any.whl", hash = "sha256:e3a35984b3c741191ccbb8c180c465b82d9df492e1fde19aae3baa8ed345b4f0", size = 64672, upload-time = "2025-05-26T09:55:06.724Z" },
 ]
 
 [[package]]
@@ -1707,6 +1713,24 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/eb/a2/709e0fe2f093556c17fbafda93ac032257242cabcc7ff3369e2cb76a97aa/psutil-7.0.0-cp36-abi3-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:a5f098451abc2828f7dc6b58d44b532b22f2088f4999a937557b603ce72b1993", size = 279544, upload-time = "2025-02-13T21:54:24.68Z" },
     { url = "https://files.pythonhosted.org/packages/50/e6/eecf58810b9d12e6427369784efe814a1eec0f492084ce8eb8f4d89d6d61/psutil-7.0.0-cp37-abi3-win32.whl", hash = "sha256:ba3fcef7523064a6c9da440fc4d6bd07da93ac726b5733c29027d7dc95b39d99", size = 241053, upload-time = "2025-02-13T21:54:34.31Z" },
     { url = "https://files.pythonhosted.org/packages/50/1b/6921afe68c74868b4c9fa424dad3be35b095e16687989ebbb50ce4fceb7c/psutil-7.0.0-cp37-abi3-win_amd64.whl", hash = "sha256:4cf3d4eb1aa9b348dec30105c55cd9b7d4629285735a102beb4441e38db90553", size = 244885, upload-time = "2025-02-13T21:54:37.486Z" },
+]
+
+[[package]]
+name = "pyarrow"
+version = "17.0.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "numpy" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/27/4e/ea6d43f324169f8aec0e57569443a38bab4b398d09769ca64f7b4d467de3/pyarrow-17.0.0.tar.gz", hash = "sha256:4beca9521ed2c0921c1023e68d097d0299b62c362639ea315572a58f3f50fd28", size = 1112479, upload-time = "2024-07-17T10:41:25.092Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/43/e0/a898096d35be240aa61fb2d54db58b86d664b10e1e51256f9300f47565e8/pyarrow-17.0.0-cp39-cp39-macosx_10_15_x86_64.whl", hash = "sha256:13d7a460b412f31e4c0efa1148e1d29bdf18ad1411eb6757d38f8fbdcc8645fb", size = 29007881, upload-time = "2024-07-17T10:40:37.927Z" },
+    { url = "https://files.pythonhosted.org/packages/59/22/f7d14907ed0697b5dd488d393129f2738629fa5bcba863e00931b7975946/pyarrow-17.0.0-cp39-cp39-macosx_11_0_arm64.whl", hash = "sha256:9b564a51fbccfab5a04a80453e5ac6c9954a9c5ef2890d1bcf63741909c3f8df", size = 27178117, upload-time = "2024-07-17T10:40:43.964Z" },
+    { url = "https://files.pythonhosted.org/packages/bf/ee/661211feac0ed48467b1d5c57298c91403809ec3ab78b1d175e1d6ad03cf/pyarrow-17.0.0-cp39-cp39-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:32503827abbc5aadedfa235f5ece8c4f8f8b0a3cf01066bc8d29de7539532687", size = 39273896, upload-time = "2024-07-17T10:40:51.276Z" },
+    { url = "https://files.pythonhosted.org/packages/af/61/bcd9b58e38ead6ad42b9ed00da33a3f862bc1d445e3d3164799c25550ac2/pyarrow-17.0.0-cp39-cp39-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:a155acc7f154b9ffcc85497509bcd0d43efb80d6f733b0dc3bb14e281f131c8b", size = 39875438, upload-time = "2024-07-17T10:40:58.5Z" },
+    { url = "https://files.pythonhosted.org/packages/75/63/29d1bfcc57af73cde3fc3baccab2f37548de512dbe0ab294b033cd203516/pyarrow-17.0.0-cp39-cp39-manylinux_2_28_aarch64.whl", hash = "sha256:dec8d129254d0188a49f8a1fc99e0560dc1b85f60af729f47de4046015f9b0a5", size = 38735092, upload-time = "2024-07-17T10:41:06.034Z" },
+    { url = "https://files.pythonhosted.org/packages/39/f4/90258b4de753df7cc61cefb0312f8abcf226672e96cc64996e66afce817a/pyarrow-17.0.0-cp39-cp39-manylinux_2_28_x86_64.whl", hash = "sha256:a48ddf5c3c6a6c505904545c25a4ae13646ae1f8ba703c4df4a1bfe4f4006bda", size = 39867610, upload-time = "2024-07-17T10:41:13.61Z" },
+    { url = "https://files.pythonhosted.org/packages/e7/f6/b75d4816c32f1618ed31a005ee635dd1d91d8164495d94f2ea092f594661/pyarrow-17.0.0-cp39-cp39-win_amd64.whl", hash = "sha256:42bf93249a083aca230ba7e2786c5f673507fa97bbd9725a1e2754715151a204", size = 25148611, upload-time = "2024-07-17T10:41:20.698Z" },
 ]
 
 [[package]]
@@ -1821,6 +1845,24 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/b9/13/55deec25bf09383216fa7f1dfcdbfca40a04aa00b6d15a5cbf25af8fce5f/pygtrie-2.5.0.tar.gz", hash = "sha256:203514ad826eb403dab1d2e2ddd034e0d1534bbe4dbe0213bb0593f66beba4e2", size = 39266, upload-time = "2022-07-16T14:29:47.459Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/ec/cd/bd196b2cf014afb1009de8b0f05ecd54011d881944e62763f3c1b1e8ef37/pygtrie-2.5.0-py3-none-any.whl", hash = "sha256:8795cda8105493d5ae159a5bef313ff13156c5d4d72feddefacaad59f8c8ce16", size = 25099, upload-time = "2022-09-23T20:30:05.12Z" },
+]
+
+[[package]]
+name = "pyogrio"
+version = "0.9.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "certifi" },
+    { name = "numpy" },
+    { name = "packaging" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/4e/09/a13ffa71f617f3c76f31984bc4fc237aede9988d89056b278efcb97f6fb0/pyogrio-0.9.0.tar.gz", hash = "sha256:6a6fa2e8cf95b3d4a7c0fac48bce6e5037579e28d3eb33b53349d6e11f15e5a8", size = 352526, upload-time = "2024-06-17T20:09:31.412Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/2b/5c/83a2406c69cfb79136104abdec4413801f725f9d06c44560c0598b822cbd/pyogrio-0.9.0-cp39-cp39-macosx_12_0_arm64.whl", hash = "sha256:2829615cf58b1b24a9f96fea42abedaa1a800dd351c67374cc2f6341138608f3", size = 14751187, upload-time = "2024-06-17T20:09:14.555Z" },
+    { url = "https://files.pythonhosted.org/packages/9c/c3/f9ad3251922e9b0ff672a4f7f04364c8f5644b0041009e53608f8ef70f90/pyogrio-0.9.0-cp39-cp39-macosx_12_0_x86_64.whl", hash = "sha256:17420febc17651876d5140b54b24749aa751d482b5f9ef6267b8053e6e962876", size = 16083763, upload-time = "2024-06-17T20:09:20.21Z" },
+    { url = "https://files.pythonhosted.org/packages/a0/f6/564e90bc8a07cb4895e15e396bc10aeb214a369cd9594f67672c93e1c111/pyogrio-0.9.0-cp39-cp39-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:3a2fcaa269031dbbc8ebd91243c6452c5d267d6df939c008ab7533413c9cf92d", size = 23114424, upload-time = "2024-06-17T20:09:24.05Z" },
+    { url = "https://files.pythonhosted.org/packages/21/2f/88b69cc7fd095d2c802843282cab554a9a5c7ff81ba929c402a75706c525/pyogrio-0.9.0-cp39-cp39-manylinux_2_28_aarch64.whl", hash = "sha256:019731a856a9abfe909e86f50eb13f8362f6742337caf757c54b7c8acfe75b89", size = 22318694, upload-time = "2024-06-17T20:29:18.213Z" },
+    { url = "https://files.pythonhosted.org/packages/eb/4f/06e4b3ad1b300bfb863093a10614b1c014a4d7a955c14016087dd4269387/pyogrio-0.9.0-cp39-cp39-win_amd64.whl", hash = "sha256:d668cb10f2bf6ccd7c402f91e8b06290722dd09dbe265ae95b2c13db29ebeba0", size = 15917284, upload-time = "2024-06-17T20:09:28.458Z" },
 ]
 
 [[package]]
