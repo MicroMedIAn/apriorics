@@ -6,26 +6,26 @@ base:
   remote_path: /media/AprioricsSlides/
   slide_extension: .svs
 local:
-  geojson_path: geojsons_new
-  log_path: registration_geojsons_new
+  geojson_path: geojsons
+  log_path: registration_geojsons
   main_slide_path: slides
   slide_path: slides_tmp
-  mask_path: masks_new
+  mask_path: masks
   tissue_path: tissue_geojsons
 mask_extraction:
   binary_op: closing
   dab_thr: 0.03
   object_min_size: 1000
-  hole_min_size: 50000
+  hole_min_size: 10000
   overlap: 0.3
   num_workers: 30
   psize: 5000
   radius: 10
 remote:
-  geojson_path: geojsons_new
-  mask_path: masks_new
+  geojson_path: geojsons
+  mask_path: masks
   slide_path: .
-  log_path: registration_geojsons_new
+  log_path: registration_geojsons
 slide_download:
   add_tree: true
   clean_previous: true

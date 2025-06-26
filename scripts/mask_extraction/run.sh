@@ -6,7 +6,7 @@ ihc_type=$(yq .base.ihc_type params.yaml)
 he_slide_folder=$data_path/$(yq .local.main_slide_path params.yaml)/HE
 ihc_slide_folder=$data_path/$(yq .local.main_slide_path params.yaml)/IHC
 slide_folder=$data_path/$(yq .local.slide_path params.yaml)
-outfolder=$data_path/$(yq .local.mask_path params.yaml)/HE
+outfolder=$data_path/$(yq .local.mask_path params.yaml)
 mask_extension=$(yq .base.mask_extension params.yaml)
 for file_path in $he_slide_folder/*.svs; do
   filename=$(basename $file_path)

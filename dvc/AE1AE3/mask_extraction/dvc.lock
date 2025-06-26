@@ -9,44 +9,44 @@ stages:
     outs:
     - path: ../data/slides
       hash: md5
-      md5: 91e820ee81bfcef8a36b8b25ff9ee791.dir
-      size: 13001716190
-      nfiles: 10
+      md5: 2134a4bc76317fc8114d454723fac760.dir
+      size: 508227237628
+      nfiles: 320
   mask_extraction:
     cmd: python ../../../scripts/mask_extraction/register_extract_polygons_masks_mp.py
       --data_path ../data --ihc_type AE1AE3 --mapping_file ../../../ihc_mapping.json
       --mask_extension .tif --remote_path /media/AprioricsSlides/ --slide_extension
       .svs --binary_op closing --dab_thr 0.03 --object_min_size 1000 --hole_min_size
-      50000 --overlap 0.3 --num_workers 30 --psize 5000 --radius 10 --geojson_path
-      geojsons_new --log_path registration_geojsons_new --main_slide_path slides --slide_path
-      slides_tmp --mask_path masks_new
+      10000 --overlap 0.3 --num_workers 30 --psize 5000 --radius 10 --geojson_path
+      geojsons --log_path registration_geojsons --main_slide_path slides --slide_path
+      slides_tmp --mask_path masks --tissue_path tissue_geojsons
     deps:
     - path: ../data/slides
       hash: md5
-      md5: 91e820ee81bfcef8a36b8b25ff9ee791.dir
-      size: 13001716190
-      nfiles: 10
+      md5: 0ab0bc6a1b15716ab311e03f86007298.dir
+      size: 485827066388
+      nfiles: 304
     outs:
-    - path: ../data/geojsons_new
+    - path: ../data/geojsons
       hash: md5
-      md5: 813d0491c0242011b546d220542e19e5.dir
-      size: 472019334
-      nfiles: 5
-    - path: ../data/masks_new
+      md5: ecdb0ae9a9e20529904a24755897cb9f.dir
+      size: 21927052682
+      nfiles: 152
+    - path: ../data/masks
       hash: md5
-      md5: 0653d68381528671e0ca43a291dada18.dir
-      size: 4584562803
-      nfiles: 5
-    - path: ../data/registration_geojsons_new
+      md5: 0ff2bab4dca4ce058bde3143df4d9377.dir
+      size: 176443008324
+      nfiles: 155
+    - path: ../data/registration_geojsons
       hash: md5
-      md5: 67b7e0b5902d20faccc74518a2ef0b3b.dir
-      size: 45454
-      nfiles: 5
+      md5: c0933e9aac49989f2f9c84c00490c774.dir
+      size: 1056154
+      nfiles: 126
   geojson_upload:
-    cmd: rsync -au ../data/geojsons_new/ /media/AprioricsSlides//geojsons_new/AE1AE3/
+    cmd: rsync -au ../data/geojsons/ /media/AprioricsSlides//geojsons/AE1AE3/
     deps:
-    - path: ../data/geojsons_new
+    - path: ../data/geojsons
       hash: md5
-      md5: 813d0491c0242011b546d220542e19e5.dir
-      size: 472019334
-      nfiles: 5
+      md5: ecdb0ae9a9e20529904a24755897cb9f.dir
+      size: 21927052682
+      nfiles: 152
