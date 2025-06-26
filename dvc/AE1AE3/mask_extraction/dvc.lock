@@ -34,14 +34,14 @@ stages:
       nfiles: 152
     - path: ../data/masks
       hash: md5
-      md5: 0ff2bab4dca4ce058bde3143df4d9377.dir
-      size: 176443008324
-      nfiles: 155
+      md5: d25aa7452a5bda203d0c95bad157c3b0.dir
+      size: 176126582084
+      nfiles: 152
     - path: ../data/registration_geojsons
       hash: md5
-      md5: c0933e9aac49989f2f9c84c00490c774.dir
-      size: 1056154
-      nfiles: 126
+      md5: d61693b994173e02628647614bf577cc.dir
+      size: 1301754
+      nfiles: 152
   geojson_upload:
     cmd: rsync -au ../data/geojsons/ /media/AprioricsSlides//geojsons/AE1AE3/
     deps:
