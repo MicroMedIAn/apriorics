@@ -63,7 +63,7 @@ def get_coord_transform(
         thumb_ihc_g, ((0, max(0, he_h - ihc_h)), (0, max(0, he_w - ihc_w)))
     )
     affine, _, _ = phase_cross_correlation(thumb_ihc_g, thumb_he_g)
-    dsr = slide_he.dimensions[1] / thumb_he_g.shape[0]
+    dsr = slide_he.dimensions[1] / thumb_he.shape[0]
     affine = np.array(affine, dtype=int) * dsr
 
     def _transform(x, y):
