@@ -29,14 +29,14 @@ stages:
     outs:
     - path: ../data/geojsons
       hash: md5
-      md5: 9fc1deff2084b37841fd9a149befd003.dir
-      size: 21925976053
-      nfiles: 152
+      md5: feb398f2893abda8f426af60f8cd8e87.dir
+      size: 21924861578
+      nfiles: 151
     - path: ../data/masks
       hash: md5
-      md5: 6a2bb0d92436b3c850b4972ccaa9ae1f.dir
-      size: 176122815110
-      nfiles: 152
+      md5: aa2b50f384fa4882b67568a1800ccffb.dir
+      size: 175760891753
+      nfiles: 151
     - path: ../data/registration_geojsons
       hash: md5
       md5: 05a58cd0ee0cbe7afc374eb6dc04876b.dir

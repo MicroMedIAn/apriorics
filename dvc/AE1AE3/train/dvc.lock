@@ -22,20 +22,20 @@ stages:
     deps:
     - path: ../data/masks
       hash: md5
-      md5: 9c923b617991c71debb57c3f136ad5be.dir
-      size: 547157558083
-      nfiles: 546
+      md5: d25aa7452a5bda203d0c95bad157c3b0.dir
+      size: 176126582084
+      nfiles: 152
     - path: ../data/slides
       hash: md5
-      md5: d751713988987e9331980363e24189ce.dir
-      size: 0
-      nfiles: 0
+      md5: 0ab0bc6a1b15716ab311e03f86007298.dir
+      size: 485827066388
+      nfiles: 304
     outs:
     - path: ../data/train/512_0/patch_csvs
       hash: md5
-      md5: ef44b97986e90c37dd6d038af250a208.dir
-      size: 362323594
-      nfiles: 498
+      md5: 22978cc71c511811a480bd699d700c70.dir
+      size: 311431857
+      nfiles: 152
   split_dataset:
     cmd: python ../../../scripts/train/split_full_dataset.py --out_csv /data/anapath/AprioricsSlides/train/splits.csv
       --locked_test_file /data/anapath/AprioricsSlides/train/pam50_slides.txt --data_path
@@ -58,9 +58,9 @@ stages:
     deps:
     - path: ../data/train/512_0/patch_csvs
       hash: md5
-      md5: ef44b97986e90c37dd6d038af250a208.dir
-      size: 362323594
-      nfiles: 498
+      md5: 22978cc71c511811a480bd699d700c70.dir
+      size: 311431857
+      nfiles: 152
     outs:
     - path: ../data/train/logs/apriorics
       hash: md5
@@ -69,8 +69,8 @@ stages:
       nfiles: 50
     - path: .model_hash.yaml
       hash: md5
-      md5: d41d8cd98f00b204e9800998ecf8427e
-      size: 0
+      md5: 2e7ff3027cb796cd22f2ed1a82241a92
+      size: 38
   evaluate:
     cmd: python ../../../scripts/train/predict_export_geojsons.py --hash_file .model_hash.yaml
       --outfolder ../data/evaluate --slidefolder ../data/slides --maskfolder ../data/masks
