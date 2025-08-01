@@ -3,7 +3,6 @@ from argparse import ArgumentParser
 from math import ceil
 from pathlib import Path
 
-import horovod.torch as hvd
 import pandas as pd
 import pytorch_lightning as pl
 import torch
@@ -40,13 +39,7 @@ IHCS = [
     "PHH3",
 ]
 
-parser = ArgumentParser(
-    prog=(
-        "Train a detection model for a specific IHC (PHH3). To train on multiple gpus, "
-        "should be called as `horovodrun -np n_gpus python train_detection.py "
-        "--horovod`."
-    )
-)
+parser = ArgumentParser()
 parser.add_argument(
     "--hash-file",
     type=Path,
@@ -94,12 +87,7 @@ parser.add_argument(
     "--gpu",
     type=int,
     default=0,
-    help="GPU index to used when not using horovod. Default 0.",
-)
-parser.add_argument(
-    "--horovod",
-    action="store_true",
-    help="Specify when using script with horovodrun. Optional.",
+    help="GPU index to use. Default 0.",
 )
 parser.add_argument(
     "--batch-size",
@@ -218,9 +206,6 @@ def _collate_fn(batch):
 if __name__ == "__main__":
     args = parser.parse_args()
 
-    if args.horovod:
-        hvd.init()
-
     seed_everything(workers=True)
 
     trainfolder = args.trainfolder / args.ihc_type
@@ -337,8 +322,7 @@ if __name__ == "__main__":
         auto_metric_logging=False,
     )
 
-    if not args.horovod or hvd.rank() == 0:
-        logger.experiment.add_tag(args.ihc_type)
+    logger.experiment.add_tag(args.ihc_type)
 
     ckpt_callback = ModelCheckpoint(
         save_top_k=3,
@@ -349,14 +333,14 @@ if __name__ == "__main__":
     )
 
     trainer = pl.Trainer(
-        gpus=1 if args.horovod else [args.gpu],
+        gpus=[args.gpu],
         min_epochs=args.epochs,
         max_epochs=args.epochs,
         logger=logger,
         precision=16,
         accumulate_grad_batches=args.grad_accumulation,
         callbacks=[ckpt_callback],
-        strategy="horovod" if args.horovod else None,
+        strategy=None,
     )
 
     if args.resume_version is not None:

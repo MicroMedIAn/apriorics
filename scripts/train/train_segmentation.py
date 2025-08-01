@@ -3,7 +3,6 @@ from argparse import ArgumentParser
 from math import ceil
 from pathlib import Path
 
-import horovod.torch as hvd
 import pandas as pd
 import pytorch_lightning as pl
 import torch
@@ -41,13 +40,7 @@ IHCS = [
     "PHH3",
 ]
 
-parser = ArgumentParser(
-    prog=(
-        "Train a segmentation model for a specific IHC. To train on multiple gpus, "
-        "should be called as `horovodrun -np n_gpus python train_segmentation.py "
-        "--horovod`."
-    )
-)
+parser = ArgumentParser(prog=("Train a segmentation model for a specific IHC."))
 parser.add_argument(
     "--hash_file",
     type=Path,
@@ -95,12 +88,7 @@ parser.add_argument(
     "--gpu",
     type=int,
     default=0,
-    help="GPU index to used when not using horovod. Default 0.",
-)
-parser.add_argument(
-    "--horovod",
-    action="store_true",
-    help="Specify when using script with horovodrun. Optional.",
+    help="GPU index to use. Default 0.",
 )
 parser.add_argument(
     "--batch_size",
@@ -252,8 +240,6 @@ parser.add_argument(
 if __name__ == "__main__":
     __spec__ = None
     args = parser.parse_known_args()[0]
-    if args.horovod:
-        hvd.init()
 
     seed_everything(workers=True)
 
@@ -270,10 +256,10 @@ if __name__ == "__main__":
         lambda x: maskfolder / x.with_suffix(args.mask_extension).name
     )
     slide_paths = mask_paths.map(
-        lambda x: slidefolder / x.with_suffix(args.slide_extension).name
+        lambda x: slidefolder / "HE" / x.with_suffix(args.slide_extension).name
     )
 
-    split_df = pd.read_csv(args.splitfile).sort_values("slide")
+    split_df = pd.read_csv(args.split_file).sort_values("slide")
     split_df = split_df.loc[split_df["slide"].isin(patches_paths.map(lambda x: x.stem))]
     test_idxs = (split_df["split"] == "test").values
     val_idxs = (split_df["split"] == args.fold).values
@@ -375,8 +361,7 @@ if __name__ == "__main__":
         auto_output_logging=False,
     )
 
-    if not args.horovod or hvd.rank() == 0:
-        logger.experiment.add_tag(args.ihc_type)
+    logger.experiment.add_tag(args.ihc_type)
 
     ckpt_callback = ModelCheckpoint(
         save_top_k=3,
@@ -389,14 +374,14 @@ if __name__ == "__main__":
     exp = logger.experiment
     exp.log_text(train_val_text)
     trainer = pl.Trainer(
-        gpus=1 if args.horovod else [args.gpu],
+        gpus=[args.gpu],
         min_epochs=args.epochs,
         max_epochs=args.epochs,
         logger=logger,
         precision=16,
         accumulate_grad_batches=args.grad_accumulation,
         callbacks=[ckpt_callback],
-        strategy="horovod" if args.horovod else None,
+        strategy=None,
         num_sanity_val_steps=0,
         gradient_clip_val=args.grad_clip,
     )

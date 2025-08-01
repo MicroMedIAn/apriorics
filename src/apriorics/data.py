@@ -12,7 +12,6 @@ from torch.utils.data import Dataset, RandomSampler, Sampler
 from tqdm import tqdm
 
 from apriorics.masks import mask_to_bbox
-from apriorics.transforms import StainAugmentor
 
 
 class SegmentationDataset(Dataset):
@@ -25,12 +24,6 @@ class SegmentationDataset(Dataset):
             images.
         patches_paths: list of patch csvs' filepaths. Files must be formatted according
             to `PathAIA API <https://github.com/MicroMedIAn/PathAIA>`_.
-        stain_matrices_paths: path to stain matrices .npy files. Each file must contain
-            a (2, 3) matrice to use for stain separation. If not sppecified while
-            `stain_augmentor` is, stain matrices will be computed at runtime (can cause
-            a bottleneckd uring training).
-        stain_augmentor: :class:`~apriorics.transforms.StainAugmentor` object to use for
-            stain augmentation.
         transforms: list of `albumentation <https://albumentations.ai/>`_ transforms to
             use on images (and on masks when relevant).
         slide_backend: whether to use `OpenSlide <https://openslide.org/>`_ or
@@ -43,8 +36,6 @@ class SegmentationDataset(Dataset):
         slide_paths: Sequence[PathLike],
         mask_paths: Sequence[PathLike],
         patches_paths: Sequence[PathLike],
-        stain_matrices_paths: Optional[Sequence[PathLike]] = None,
-        stain_augmentor: Optional[StainAugmentor] = None,
         transforms: Optional[Sequence[BasicTransform]] = None,
         slide_backend: str = "cucim",
         step: int = 1,
@@ -70,12 +61,6 @@ class SegmentationDataset(Dataset):
                         self.slide_idxs.append(slide_idx)
 
         self.n_pos = np.array(self.n_pos, dtype=np.uint64)
-
-        if stain_matrices_paths is None:
-            self.stain_matrices = None
-        else:
-            self.stain_matrices = [np.load(path) for path in stain_matrices_paths]
-        self.stain_augmentor = stain_augmentor
         self.transforms = Compose(ifnone(transforms, []))
 
     def __len__(self):
@@ -91,20 +76,11 @@ class SegmentationDataset(Dataset):
 
         slide_region = np.asarray(
             slide.read_region(patch.position, patch.level, patch.size).convert("RGB")
-        )
+        ).copy()
         mask_region = np.asarray(
             mask.read_region(patch.position, patch.level, patch.size).convert("1"),
             dtype=np.float32,
-        )
-
-        if self.stain_augmentor is not None:
-            if self.stain_matrices is not None:
-                stain_matrix = self.stain_matrices[slide_idx]
-            else:
-                stain_matrix = None
-            slide_region = self.stain_augmentor(image=(slide_region, stain_matrix))[
-                "image"
-            ]
+        ).copy()
 
         transformed = self.transforms(image=slide_region, mask=mask_region)
         return transformed["image"], transformed["mask"]
@@ -120,12 +96,6 @@ class SparseSegmentationDataset(Dataset):
             images.
         patches_paths: list of patch csvs' filepaths. Files must be formatted according
             to `PathAIA API <https://github.com/MicroMedIAn/PathAIA>`_.
-        stain_matrices_paths: path to stain matrices .npy files. Each file must contain
-            a (2, 3) matrice to use for stain separation. If not sppecified while
-            `stain_augmentor` is, stain matrices will be computed at runtime (can cause
-            a bottleneckd uring training).
-        stain_augmentor: :class:`~apriorics.transforms.StainAugmentor` object to use for
-            stain augmentation.
         transforms: list of `albumentation <https://albumentations.ai/>`_ transforms to
             use on images (and on masks when relevant).
         slide_backend: whether to use `OpenSlide <https://openslide.org/>`_ or
@@ -138,12 +108,10 @@ class SparseSegmentationDataset(Dataset):
         slide_paths: Sequence[PathLike],
         mask_paths: Sequence[PathLike],
         patches_paths: Sequence[PathLike],
-        stain_matrices_paths: Optional[Sequence[PathLike]] = None,
-        stain_augmentor: Optional[StainAugmentor] = None,
         transforms: Optional[Sequence[BasicTransform]] = None,
         slide_backend: str = "cucim",
         step: int = 1,
-        **kwargs
+        **kwargs,
     ):
         super().__init__()
         self.slides = []
@@ -166,12 +134,6 @@ class SparseSegmentationDataset(Dataset):
                         self.slide_idxs.append(slide_idx)
 
         self.n_pos = np.array(self.n_pos, dtype=np.uint64)
-
-        if stain_matrices_paths is None:
-            self.stain_matrices = None
-        else:
-            self.stain_matrices = [np.load(path) for path in stain_matrices_paths]
-        self.stain_augmentor = stain_augmentor
         self.transforms = Compose(ifnone(transforms, []))
 
     def __len__(self):
@@ -192,15 +154,6 @@ class SparseSegmentationDataset(Dataset):
         w, h = patch.size
         mask_region = mask[y : y + h, x : x + w].toarray().astype(np.float32)
 
-        if self.stain_augmentor is not None:
-            if self.stain_matrices is not None:
-                stain_matrix = self.stain_matrices[slide_idx]
-            else:
-                stain_matrix = None
-            slide_region = self.stain_augmentor(image=(slide_region, stain_matrix))[
-                "image"
-            ]
-
         transformed = self.transforms(image=slide_region, mask=mask_region)
         return transformed["image"], transformed["mask"]
 
@@ -215,12 +168,6 @@ class DetectionDataset(Dataset):
             images.
         patches_paths: list of patch csvs' filepaths. Files must be formatted according
             to `PathAIA API <https://github.com/MicroMedIAn/PathAIA>`_.
-        stain_matrices_paths: path to stain matrices .npy files. Each file must contain
-            a (2, 3) matrice to use for stain separation. If not sppecified while
-            `stain_augmentor` is, stain matrices will be computed at runtime (can cause
-            a bottleneckd uring training).
-        stain_augmentor: :class:`~apriorics.transforms.StainAugmentor` object to use for
-            stain augmentation.
         transforms: list of `albumentation <https://albumentations.ai/>`_ transforms to
             use on images (and on masks when relevant).
         slide_backend: whether to use `OpenSlide <https://openslide.org/>`_ or
@@ -232,12 +179,10 @@ class DetectionDataset(Dataset):
         slide_paths: Sequence[PathLike],
         mask_paths: Sequence[PathLike],
         patches_paths: Sequence[PathLike],
-        stain_matrices_paths: Optional[Sequence[PathLike]] = None,
-        stain_augmentor: Optional[StainAugmentor] = None,
         transforms: Optional[Sequence[BasicTransform]] = None,
         slide_backend: str = "cucim",
         min_size: int = 10,
-        **kwargs
+        **kwargs,
     ):
         super().__init__()
         self.slides = []
@@ -260,11 +205,6 @@ class DetectionDataset(Dataset):
 
         self.n_pos = np.array(self.n_pos, dtype=np.uint64)
 
-        if stain_matrices_paths is None:
-            self.stain_matrices = None
-        else:
-            self.stain_matrices = [np.load(path) for path in stain_matrices_paths]
-        self.stain_augmentor = stain_augmentor
         self.transforms = Compose(ifnone(transforms, []))
         self.min_size = min_size
         self.clean()
@@ -287,15 +227,6 @@ class DetectionDataset(Dataset):
             mask.read_region(patch.position, patch.level, patch.size).convert("1"),
             dtype=np.uint8,
         )
-
-        if self.stain_augmentor is not None:
-            if self.stain_matrices is not None:
-                stain_matrix = self.stain_matrices[slide_idx]
-            else:
-                stain_matrix = None
-            slide_region = self.stain_augmentor(image=(slide_region, stain_matrix))[
-                "image"
-            ]
 
         retransform = True
         count = 0
@@ -337,12 +268,6 @@ class ClassifDataset(Dataset):
         slide_paths: list of slides' filepaths.
         patches_paths: list of patch csvs' filepaths. Files must be formatted according
             to `PathAIA API <https://github.com/MicroMedIAn/PathAIA>`_.
-        stain_matrices_paths: path to stain matrices .npy files. Each file must contain
-            a (2, 3) matrice to use for stain separation. If not sppecified while
-            `stain_augmentor` is, stain matrices will be computed at runtime (can cause
-            a bottleneckd uring training).
-        stain_augmentor: :class:`~apriorics.transforms.StainAugmentor` object to use for
-            stain augmentation.
         transforms: list of `albumentation <https://albumentations.ai/>`_ transforms to
             use on images (and on masks when relevant).
         slide_backend: whether to use `OpenSlide <https://openslide.org/>`_ or
@@ -354,13 +279,11 @@ class ClassifDataset(Dataset):
         self,
         slide_paths: Sequence[PathLike],
         patches_paths: Sequence[PathLike],
-        stain_matrices_paths: Optional[Sequence[PathLike]] = None,
-        stain_augmentor: Optional[StainAugmentor] = None,
         transforms: Optional[Sequence[BasicTransform]] = None,
         slide_backend: str = "cucim",
         step: int = 1,
         area_thr: int = 50,
-        **kwargs
+        **kwargs,
     ):
         super().__init__()
         self.slides = []
@@ -384,11 +307,6 @@ class ClassifDataset(Dataset):
 
         self.n_pos = np.array(self.n_pos, dtype=np.uint64)
 
-        if stain_matrices_paths is None:
-            self.stain_matrices = None
-        else:
-            self.stain_matrices = [np.load(path) for path in stain_matrices_paths]
-        self.stain_augmentor = stain_augmentor
         self.transforms = Compose(ifnone(transforms, []))
 
     def __len__(self):
@@ -405,15 +323,6 @@ class ClassifDataset(Dataset):
         slide_region = np.asarray(
             slide.read_region(patch.position, patch.level, patch.size).convert("RGB")
         )
-
-        if self.stain_augmentor is not None:
-            if self.stain_matrices is not None:
-                stain_matrix = self.stain_matrices[slide_idx]
-            else:
-                stain_matrix = None
-            slide_region = self.stain_augmentor(image=(slide_region, stain_matrix))[
-                "image"
-            ]
 
         transformed = self.transforms(image=slide_region)
         return transformed["image"], torch.tensor(label, dtype=torch.float32)
@@ -477,7 +386,7 @@ class BalancedRandomSampler(RandomSampler):
             if len(avail) == 1:
                 cl_patches = avail[0]
                 n_patches = len(cl_patches)
-                max_draw = int(2 ** 23)
+                max_draw = int(2**23)
                 n_rest = n_patches % max_draw
                 n_draws = int(np.ceil(n_patches / max_draw))
                 idx = []

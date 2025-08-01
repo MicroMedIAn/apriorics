@@ -34,13 +34,7 @@ IHCS = [
     "PHH3",
 ]
 
-parser = ArgumentParser(
-    prog=(
-        "Train a segmentation model for a specific IHC. To train on multiple gpus, "
-        "should be called as `horovodrun -np n_gpus python train_segmentation.py "
-        "--horovod`."
-    )
-)
+parser = ArgumentParser()
 parser.add_argument(
     "--model",
     help=(
@@ -74,7 +68,7 @@ parser.add_argument(
     "--gpu",
     type=int,
     default=0,
-    help="GPU index to used when not using horovod. Default 0.",
+    help="GPU index to use. Default 0.",
 )
 parser.add_argument(
     "--batch_size",

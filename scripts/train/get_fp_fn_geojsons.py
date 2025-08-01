@@ -18,13 +18,7 @@ IHCS = [
     "PHH3",
 ]
 
-parser = ArgumentParser(
-    prog=(
-        "Train a segmentation model for a specific IHC. To train on multiple gpus, "
-        "should be called as `horovodrun -np n_gpus python train_segmentation.py "
-        "--horovod`."
-    )
-)
+parser = ArgumentParser()
 parser.add_argument(
     "--ihc_type",
     choices=IHCS,
@@ -74,21 +68,14 @@ if __name__ == "__main__":
     evalfolder = args.evalfolder / version / "geojsons"
     gtfolder = args.gtfolder
     hovernetfolder = args.hovernetfolder / args.ihc_type
-    patchgjfolder = (
-        args.trainfolder
-        / f"{args.patch_size}_{args.level}/patch_geojsons"
-    )
+    patchgjfolder = args.trainfolder / f"{args.patch_size}_{args.level}/patch_geojsons"
     regfolder = args.regfolder
 
     fpfolder = (
-        args.evalfolder
-        / version
-        / f"geojsons_fp_{int(args.iou_threshold*100)}"
+        args.evalfolder / version / f"geojsons_fp_{int(args.iou_threshold * 100)}"
     )
     fnfolder = (
-        args.evalfolder
-        / version
-        / f"geojsons_fn_{int(args.iou_threshold*100)}"
+        args.evalfolder / version / f"geojsons_fn_{int(args.iou_threshold * 100)}"
     )
     metfolder = args.evalfolder / version / "metrics_hover"
 
@@ -153,14 +140,14 @@ if __name__ == "__main__":
         precs.append(prec)
 
         with open(metfolder / f"{evalpath.stem}.txt", "w") as f:
-            f.write(f"VPP: {prec*100:.2f}%\n")
-            f.write(f"Sensitivity: {rec*100:.2f}%\n")
+            f.write(f"VPP: {prec * 100:.2f}%\n")
+            f.write(f"Sensitivity: {rec * 100:.2f}%\n")
 
     prec = np.mean(precs)
     rec = np.mean(recs)
     with open(metfolder.parent / "average_metrics_hover.txt", "w") as f:
-        f.write(f"Mean VPP: {prec*100:.2f}%\n")
-        f.write(f"Mean Sensitivity: {rec*100:.2f}%\n")
+        f.write(f"Mean VPP: {prec * 100:.2f}%\n")
+        f.write(f"Mean Sensitivity: {rec * 100:.2f}%\n")
 
     if args.done_file is not None:
         with open(args.done_file, "w") as f:

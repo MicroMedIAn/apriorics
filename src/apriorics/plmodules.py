@@ -117,7 +117,7 @@ class BasicSegmentationModule(pl.LightningModule):
 
         if (
             batch_idx % max(1, self.dl_lengths[0] // 5) == 0
-            and self.trainer.training_type_plugin.global_rank == 0
+            and self.trainer.strategy.is_global_zero
         ):
             y_hat = torch.sigmoid(y_hat)
             self.log_images(x[:8], y[:8], y_hat[:8], batch_idx, step="train")
@@ -138,7 +138,7 @@ class BasicSegmentationModule(pl.LightningModule):
         y_hat = torch.sigmoid(y_hat)
         if (
             batch_idx % max(1, self.dl_lengths[1] // 5) == 0
-            and self.trainer.training_type_plugin.global_rank == 0
+            and self.trainer.strategy.is_global_zero
         ):
             self.log_images(x[:8], y[:8], y_hat[:8], batch_idx, step="val")
 
@@ -265,7 +265,7 @@ class BasicDetectionModule(pl.LightningModule):
 
         if (
             batch_idx % max(1, self.dl_lengths[1] // 5) == 0
-            and self.trainer.training_type_plugin.global_rank == 0
+            and self.trainer.strategy.is_global_zero
         ):
             self.log_images(x, y, y_hat, batch_idx)
 
@@ -426,7 +426,7 @@ class BasicClassificationModule(pl.LightningModule):
 
         if (
             batch_idx % max(1, self.dl_lengths[0] // 5) == 0
-            and self.trainer.training_type_plugin.global_rank == 0
+            and self.trainer.strategy.is_global_zero
         ):
             y_hat = torch.sigmoid(y_hat)
             self.log_images(x, y, y_hat, batch_idx, step="train")
@@ -447,7 +447,7 @@ class BasicClassificationModule(pl.LightningModule):
         y_hat = torch.sigmoid(y_hat)
         if (
             batch_idx % max(1, self.dl_lengths[1] // 5) == 0
-            and self.trainer.training_type_plugin.global_rank == 0
+            and self.trainer.strategy.is_global_zero
         ):
             self.log_images(x, y, y_hat, batch_idx, step="val")
 

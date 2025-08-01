@@ -108,16 +108,11 @@ if __name__ == "__main__":
     )
     input_files.sort(key=lambda x: x.stem)
 
-    outfolder = (
-        args.outfolder / f"{args.patch_size}_{args.level}/patch_csvs"
-    )
+    outfolder = args.outfolder / f"{args.patch_size}_{args.level}/patch_csvs"
     if not outfolder.exists():
         outfolder.mkdir(parents=True)
 
-    geojsonfolder = (
-        args.outfolder
-        / f"{args.patch_size}_{args.level}/patch_geojsons"
-    )
+    geojsonfolder = args.outfolder / f"{args.patch_size}_{args.level}/patch_geojsons"
     if args.export_geojson and not geojsonfolder.exists():
         geojsonfolder.mkdir()
 
@@ -145,9 +140,7 @@ if __name__ == "__main__":
             mask = None
 
         if args.regfolder is not None:
-            reg_path = (
-                args.regfolder / f"{in_file_path.stem}.geojson"
-            )
+            reg_path = args.regfolder / f"{in_file_path.stem}.geojson"
             if not reg_path.exists():
                 return
             gdf = geopandas.read_file(reg_path)
