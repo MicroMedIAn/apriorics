@@ -186,7 +186,7 @@ if __name__ == "__main__":
         lambda x: maskfolder / x.with_suffix(args.mask_extension).name
     )
 
-    split_df = pd.read_csv(args.splitfile).sort_values("slide")
+    split_df = pd.read_csv(args.split_file).sort_values("slide")
     split_df = split_df.loc[split_df["slide"].isin(patches_paths.map(lambda x: x.stem))]
     val_idxs = (split_df["split"] == args.test_fold).values
 
