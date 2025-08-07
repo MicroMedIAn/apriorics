@@ -9,9 +9,9 @@ stages:
     outs:
     - path: ../data/slides
       hash: md5
-      md5: 2134a4bc76317fc8114d454723fac760.dir
-      size: 508227237628
-      nfiles: 320
+      md5: 6da7feb270858c41752f0266a457e9f6.dir
+      size: 483136813186
+      nfiles: 302
   mask_extraction:
     cmd: python ../../../scripts/mask_extraction/register_extract_polygons_masks_mp.py
       --data_path ../data --ihc_type AE1AE3 --mapping_file ../../../ihc_mapping.json
@@ -23,25 +23,25 @@ stages:
     deps:
     - path: ../data/slides
       hash: md5
-      md5: 0ab0bc6a1b15716ab311e03f86007298.dir
-      size: 485827066388
-      nfiles: 304
+      md5: 6da7feb270858c41752f0266a457e9f6.dir
+      size: 483136813186
+      nfiles: 302
     outs:
     - path: ../data/geojsons
       hash: md5
-      md5: feb398f2893abda8f426af60f8cd8e87.dir
-      size: 21924861578
+      md5: 678c0fabdb4a934381447edf77c359f7.dir
+      size: 22234066317
       nfiles: 151
     - path: ../data/masks
       hash: md5
-      md5: aa2b50f384fa4882b67568a1800ccffb.dir
-      size: 175760891753
+      md5: 038a673a5e4a8c8b3822a9c1dc2930f9.dir
+      size: 177026784151
       nfiles: 151
     - path: ../data/registration_geojsons
       hash: md5
-      md5: 05a58cd0ee0cbe7afc374eb6dc04876b.dir
-      size: 1301656
-      nfiles: 152
+      md5: 176bfcf3752303d8edd4e0afdfaa709b.dir
+      size: 1278051
+      nfiles: 151
   geojson_upload:
     cmd: rsync -au ../data/geojsons/ /media/AprioricsSlides//geojsons/AE1AE3/
     deps:
