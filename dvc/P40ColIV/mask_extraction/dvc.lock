@@ -9,39 +9,39 @@ stages:
     outs:
     - path: ../data/slides
       hash: md5
-      md5: 03a4a4c34e28495a80039b5adf86ac4c.dir
-      size: 500535220546
-      nfiles: 320
+      md5: 5ce3651b4ba86680d1552d21ba22bd13.dir
+      size: 496938041504
+      nfiles: 318
   mask_extraction:
     cmd: python ../../../scripts/mask_extraction/register_extract_polygons_masks_mp.py
       --data_path ../data --ihc_type P40ColIV --mapping_file ../../../ihc_mapping.json
       --mask_extension .tif --remote_path /media/AprioricsSlides --slide_extension
       .svs --binary_op none --dab_thr 0.015 --iou_thr 0.05 --nuc_max_siz 40 --num_workers
-      15 --object_min_size 50 --geojson_path geojsons --hovernet_path hovernet_gpkgs
+      15 --object_min_size 50 --geojson_path geojsons --hovernet_path hoverfast_gpkgs
       --log_path registration_geojsons --main_slide_path slides --slide_path slides_tmp
       --mask_path masks --tissue_path tissue_geojsons
     deps:
     - path: ../data/slides
       hash: md5
-      md5: 03a4a4c34e28495a80039b5adf86ac4c.dir
-      size: 500535220546
-      nfiles: 320
+      md5: 1cc0d6aa10af21bebbcf3e4bbc070305.dir
+      size: 490297831484
+      nfiles: 314
     outs:
     - path: ../data/geojsons
       hash: md5
-      md5: 100a26639b4b50aea72f1f487065c95e.dir
-      size: 69291563
-      nfiles: 11
+      md5: 7b882ace6e00c744119a39c4c2cc59c0.dir
+      size: 105505239
+      nfiles: 23
     - path: ../data/masks
       hash: md5
-      md5: 0a7654229d727bac5ce88b2c1c7f9f87.dir
-      size: 5798476661
-      nfiles: 11
+      md5: 9efd9f9ca358d3c276a3e3212345dd40.dir
+      size: 11465628207
+      nfiles: 23
     - path: ../data/registration_geojsons
       hash: md5
-      md5: 386297276f3cf4c01e9c71652c2e7402.dir
-      size: 49420
-      nfiles: 11
+      md5: 8aed77186200cb679e29c16d6ad0d376.dir
+      size: 131185
+      nfiles: 29
   geojson_upload:
     cmd: rsync -au ../data/geojsons/ /media/AprioricsSlides/geojsons/P40ColIV/
     deps:
