@@ -144,6 +144,7 @@ if __name__ == "__main__":
             if not reg_path.exists():
                 return
             gdf = geopandas.read_file(reg_path)
+            gdf = gdf.loc[gdf["geometry"].is_valid]
         else:
             gdf = None
 

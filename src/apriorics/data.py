@@ -495,7 +495,7 @@ class TestDataset(Dataset):
             self.slide.read_region(patch.position, patch.level, patch.size).convert(
                 "RGB"
             )
-        )
+        ).copy()
 
         transformed = self.transforms(image=slide_region)
         return transformed["image"]

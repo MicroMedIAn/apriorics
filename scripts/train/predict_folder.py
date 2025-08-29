@@ -110,7 +110,7 @@ parser.add_argument(
 )
 parser.add_argument(
     "--version",
-    help="Yaml file containing the hash (=version) of the model to load weights from.",
+    help="Hash (=version) of the model to load weights from.",
     required=True,
 )
 parser.add_argument(
