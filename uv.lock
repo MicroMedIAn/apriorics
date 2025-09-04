@@ -196,7 +196,7 @@ requires-dist = [
     { name = "numpy", specifier = ">=1.22,<2.0" },
     { name = "opencv-contrib-python", specifier = ">=4.5.5.62,<4.6.0.0" },
     { name = "opencv-python-headless", specifier = ">=4.5.5.62,<4.6.0.0" },
-    { name = "openslide-python", specifier = "==1.1.2" },
+    { name = "openslide-python", specifier = ">=1.1.2" },
     { name = "pandas", specifier = ">=2.2.2,<3.0.0" },
     { name = "pathaia", specifier = "==0.2.6" },
     { name = "pillow", specifier = ">=9.0,<10.0" },

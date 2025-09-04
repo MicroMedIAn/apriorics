@@ -24,6 +24,6 @@ for file_path in $he_slide_folder/*.svs; do
   if [ ! $? -eq 0 ]; then
     uv run dvc commit -f mask_extraction
   fi
-  rm $slide_folder/HE/$filename
-  rm $slide_folder/IHC/$filename
+  rm -f $slide_folder/HE/$filename
+  rm -f $slide_folder/IHC/$filename
 done

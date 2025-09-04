@@ -7,11 +7,12 @@ base:
   slide_extension: .svs
 local:
   geojson_path: geojsons
-  hovernet_path: hovernet_gpkgs
+  hovernet_path: hoverfast_gpkgs
   log_path: registration_geojsons
   main_slide_path: slides
   slide_path: slides_tmp
   mask_path: masks
+  tissue_path: tissue_geojsons
 mask_extraction:
   binary_op: closing
   dab_thr: 0.01

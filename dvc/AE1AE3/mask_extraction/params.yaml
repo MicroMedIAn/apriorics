@@ -18,7 +18,7 @@ mask_extraction:
   object_min_size: 1000
   hole_min_size: 10000
   overlap: 0.3
-  num_workers: 30
+  num_workers: 40
   psize: 5000
   radius: 10
 remote:

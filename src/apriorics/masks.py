@@ -164,12 +164,12 @@ def flood_full_mask(img, mask, n=40, area_threshold=50):
 
 def get_mask_ink(img):
     mask = np.ones(img.shape[:2], dtype=bool)
-    ranges = [(56, 98), (69, 119), (117, 160)]
+    ranges = [(56, 96), (75, 119), (120, 160)]
     for c, r in enumerate(ranges):
         a, b = r
         mask &= (img[..., c] > a) & (img[..., c] < b)
     mask = binary_dilation(
-        flood_mask(img, remove_small_objects(mask, min_size=10), 5), footprint=disk(15)
+        flood_mask(img, remove_small_objects(mask, min_size=15), 5), footprint=disk(15)
     )
     return mask
 
@@ -308,10 +308,18 @@ def get_mask_CD3CD20(
     ihc_hsv = rgb2hsv(ihc)
     ihc_s = ihc_hsv[:, :, 1]
     ihc_v = ihc_hsv[:, :, 2]
+    ihc_h = ihc_hsv[:, :, 0]
 
     mask_ihc = remove_small_objects(
         remove_small_holes(
-            (ihc_DAB > 0.01) & (ihc_s > 0.01) & (ihc_v < 0.85), area_threshold=600
+            binary_closing(
+                (ihc_DAB > 0.01)
+                & (ihc_s > 0.01)
+                & (ihc_v < 0.85)
+                & ((ihc_h < 0.2) | (ihc_h > 0.85)),
+                footprint=disk(5),
+            ),
+            area_threshold=600,
         ),
         min_size=50,
     )
@@ -323,8 +331,11 @@ def get_mask_CD3CD20(
         min_size=50,
     )
 
+    mask_ink = get_mask_ink(he)
+
     mask = remove_small_objects(
-        remove_small_holes(mask_ihc & ~mask_he_DAB, area_threshold=600), min_size=50
+        remove_small_holes(mask_ihc & ~mask_he_DAB & ~mask_ink, area_threshold=600),
+        min_size=100,
     )
 
     return mask

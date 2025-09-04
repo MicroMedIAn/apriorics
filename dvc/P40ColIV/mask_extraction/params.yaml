@@ -18,7 +18,7 @@ mask_extraction:
   dab_thr: 0.015
   iou_thr: 0.05
   nuc_max_siz: 40
-  num_workers: 15
+  num_workers: 30
   object_min_size: 50
 remote:
   geojson_path: geojsons
