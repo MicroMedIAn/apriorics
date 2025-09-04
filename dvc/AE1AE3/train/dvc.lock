@@ -58,18 +58,18 @@ stages:
     deps:
     - path: ../data/train/512_0/patch_csvs
       hash: md5
-      md5: 22978cc71c511811a480bd699d700c70.dir
-      size: 311431857
-      nfiles: 152
+      md5: 53d78abae5922192f4269673bcecc04f.dir
+      size: 310245573
+      nfiles: 151
     outs:
     - path: ../data/train/logs/apriorics
       hash: md5
-      md5: 9f72c038110659e7da14bb67cad310b9.dir
-      size: 41902103503
-      nfiles: 50
+      md5: b2b9111cf508807e8ccb6202266fa80f.dir
+      size: 45873280667
+      nfiles: 54
     - path: .model_hash.yaml
       hash: md5
-      md5: 2e7ff3027cb796cd22f2ed1a82241a92
+      md5: e1df10639df7862eb35106760272d60b
       size: 38
   evaluate:
     cmd: python ../../../scripts/train/predict_export_geojsons.py --hash_file .model_hash.yaml
@@ -83,24 +83,24 @@ stages:
     deps:
     - path: ../data/train/256_0/patch_csvs
       hash: md5
-      md5: bd01e1df590f015db7d34a1f63733017.dir
-      size: 1176668766
-      nfiles: 523
+      md5: e4f06f3b37a4fb758b21c165e788e91b.dir
+      size: 818059633
+      nfiles: 152
     - path: ../data/train/logs/apriorics
       hash: md5
-      md5: 9f72c038110659e7da14bb67cad310b9.dir
-      size: 41902103503
-      nfiles: 50
+      md5: b2b9111cf508807e8ccb6202266fa80f.dir
+      size: 45873280667
+      nfiles: 54
     - path: .model_hash.yaml
       hash: md5
-      md5: d41d8cd98f00b204e9800998ecf8427e
-      size: 0
+      md5: e1df10639df7862eb35106760272d60b
+      size: 38
     outs:
     - path: ../data/evaluate/
       hash: md5
-      md5: 21d63dc61c70a98822e0f22fdd769927.dir
-      size: 114646261095
-      nfiles: 2224
+      md5: 7982fb07a055167b5c03e90fdee799db.dir
+      size: 116287352178
+      nfiles: 2253
   evaluate_upload:
     cmd: rsync -avu ../data/evaluate/ /media/AprioricsSlides/evaluate/AE1AE3
     deps:
@@ -118,20 +118,20 @@ stages:
     deps:
     - path: ../data/masks
       hash: md5
-      md5: 9c923b617991c71debb57c3f136ad5be.dir
-      size: 547157558083
-      nfiles: 546
+      md5: aa2b50f384fa4882b67568a1800ccffb.dir
+      size: 175760891753
+      nfiles: 151
     - path: ../data/slides
       hash: md5
-      md5: d751713988987e9331980363e24189ce.dir
-      size: 0
-      nfiles: 0
+      md5: 0ab0bc6a1b15716ab311e03f86007298.dir
+      size: 485827066388
+      nfiles: 304
     outs:
     - path: ../data/train/256_0/patch_csvs
       hash: md5
-      md5: bd01e1df590f015db7d34a1f63733017.dir
-      size: 1176668766
-      nfiles: 523
+      md5: e4f06f3b37a4fb758b21c165e788e91b.dir
+      size: 818059633
+      nfiles: 152
   get_fp_fn_geojsons:
     cmd: python ../../../scripts/train/get_fp_fn_geojsons.py --hash_file .model_hash.yaml
       --evalfolder ../data/evaluate --gtfolder ../data/geojsons --hovernetfolder ../data/hovernet_gpkgs
