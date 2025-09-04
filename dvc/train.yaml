@@ -78,6 +78,7 @@ stages:
     cmd: >-
       python ../../../scripts/train/get_fp_fn_geojsons.py
       --hash_file .model_hash.yaml
+      --done_file .fp_fn_done.yaml
       --evalfolder ${base.data_path}/${local.evaluate_path}
       --gtfolder ${base.data_path}/${local.geojson_path}
       --hovernetfolder ${base.data_path}/${local.hovernet_path}

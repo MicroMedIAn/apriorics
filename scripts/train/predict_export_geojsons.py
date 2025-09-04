@@ -165,7 +165,7 @@ parser.add_argument("--flood_mask", action="store_true")
 if __name__ == "__main__":
     args = parser.parse_known_args()[0]
 
-    seed_everything(workers=True)
+    seed_everything(seed=args.seed, workers=True)
 
     trainfolder = args.trainfolder
     patch_csv_folder = trainfolder / f"{args.patch_size}_{args.level}/patch_csvs"

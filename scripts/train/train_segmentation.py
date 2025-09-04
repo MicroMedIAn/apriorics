@@ -241,7 +241,7 @@ if __name__ == "__main__":
     __spec__ = None
     args = parser.parse_known_args()[0]
 
-    seed_everything(workers=True)
+    seed_everything(seed=args.seed, workers=True)
 
     trainfolder = args.trainfolder
     patch_csv_folder = trainfolder / f"{args.base_size}_{args.level}/patch_csvs"
@@ -279,7 +279,10 @@ if __name__ == "__main__":
         slide_paths=slide_paths[val_idxs],
         mask_paths=mask_paths[val_idxs],
         patches_paths=patches_paths[val_idxs],
-        transforms=[CenterCrop(args.patch_size, args.patch_size), ToTensor()],
+        transforms=[
+            CenterCrop(args.patch_size, args.patch_size),
+            ToTensor(),
+        ],
         step=args.data_step,
     )
 
@@ -342,7 +345,9 @@ if __name__ == "__main__":
         scheduler_func=scheduler_func,
         metrics=metrics,
         stain_augmentor=(
-            StainAugmentor(p=args.p_augment) if args.augment_stain else None
+            StainAugmentor(p=args.p_augment, alpha_range=(0.7, 1.5))
+            if args.augment_stain
+            else None
         ),
         dl_lengths=(len(train_dl), len(val_dl)),
     )

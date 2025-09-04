@@ -1,5 +1,7 @@
 import json
+import warnings
 from argparse import ArgumentParser
+from multiprocessing import Pool
 from pathlib import Path
 
 import geopandas
@@ -8,7 +10,6 @@ import torch
 from albumentations import Crop
 from pathaia.util.paths import get_files
 from pytorch_lightning.utilities.seed import seed_everything
-from shapely.affinity import translate
 from shapely.geometry import MultiPolygon, Polygon
 from shapely.ops import unary_union
 from timm import create_model
@@ -122,9 +123,15 @@ parser.add_argument(
     ),
 )
 parser.add_argument(
-    "--area_threshold",
+    "--min_area",
     type=int,
     default=50,
+    help="Minimum area of objects to keep. Default 50.",
+)
+parser.add_argument(
+    "--max_area",
+    type=int,
+    default=5000,
     help="Minimum area of objects to keep. Default 50.",
 )
 parser.add_argument(
@@ -135,12 +142,23 @@ parser.add_argument(
 parser.add_argument("--classif_model")
 parser.add_argument("--classif_version")
 parser.add_argument("--flood_mask", action="store_true")
+parser.add_argument(
+    "--thr", type=float, help="Threshold for predictions to be considered positive."
+)
+parser.add_argument(
+    "--iou_threshold",
+    type=float,
+    default=0.5,
+    help="Threshold for IOU between hoverfast nuc and prediction.",
+)
+parser.add_argument("--hoverfastfolder", type=Path)
+parser.add_argument("--odd_even", type=int)
 
 
 if __name__ == "__main__":
     args = parser.parse_known_args()[0]
 
-    seed_everything(workers=True)
+    seed_everything(seed=args.seed, workers=True)
 
     trainfolder = args.trainfolder / args.ihc_type
     patch_csv_folder = args.outfolder / f"{args.base_size}_{args.level}/patch_csvs"
@@ -152,6 +170,15 @@ if __name__ == "__main__":
     patches_paths = get_files(
         patch_csv_folder, extensions=".csv", recurse=False
     ).sorted(key=lambda x: x.stem)
+    if args.hoverfastfolder is not None:
+        patches_paths = patches_paths.filter(
+            lambda x: (args.hoverfastfolder / f"{x.stem}.gpkg").exists()
+        )
+    if args.odd_even is not None:
+        if args.odd_even == 0:
+            patches_paths = patches_paths[::2]
+        else:
+            patches_paths = patches_paths[1::2]
     slide_paths = patches_paths.map(
         lambda x: slidefolder / x.with_suffix(args.slide_extension).name
     )
@@ -205,6 +232,16 @@ if __name__ == "__main__":
     else:
         clf = None
 
+    suffix = "_clf" if clf is not None else ""
+    outfolder = (
+        args.outfolder
+        / args.ihc_type
+        / f"{version}{suffix}"
+        / f"geojsons_{args.thr}_{args.iou_threshold}"
+    )
+    if not outfolder.exists():
+        outfolder.mkdir(parents=True)
+
     if args.patch_size < args.base_size:
         interval = int(0.3 * args.patch_size)
         max_coord = args.base_size - args.patch_size
@@ -221,6 +258,8 @@ if __name__ == "__main__":
         crops = [(0, 0, args.base_size, args.base_size)]
 
     for slide_path, patches_path in zip(slide_paths, patches_paths):
+        if (outfolder / f"{slide_path.stem}.geojson").exists():
+            continue
         print(slide_path.stem)
         polygons = []
         for crop in crops:
@@ -238,7 +277,12 @@ if __name__ == "__main__":
                 pin_memory=True,
             )
 
-            for batch_idx, x in (pbar := tqdm(enumerate(dl), total=len(dl))):
+            for batch_idx, x in (
+                pbar := tqdm(
+                    enumerate(dl),
+                    total=len(dl),
+                )
+            ):
                 x = x.to(device)
                 y_hat = torch.sigmoid(model(x))
                 if clf is not None:
@@ -247,42 +291,66 @@ if __name__ == "__main__":
                     (x.detach().cpu().numpy().transpose(0, 2, 3, 1) * 255),
                     dtype=np.uint8,
                 )
-                y_hat = y_hat.cpu().numpy() > 0.5
-                for k, mask in enumerate(y_hat):
+                y_hat = y_hat.cpu().numpy() > args.thr
+
+                def _get_polygons(k_mask):
+                    k, mask = k_mask
+
                     if args.flood_mask:
                         img = x[k]
                         mask = flood_full_mask(
                             img, mask, n=20, area_threshold=args.area_threshold
                         )
+
                     if not mask.sum():
-                        continue
+                        return
+
                     idx = batch_idx * args.batch_size + k
                     patch = ds.patches[idx]
                     polygon = mask_to_polygons_layer(mask, angle_th=0, distance_th=0)
-                    polygon = translate(
-                        polygon,
-                        xoff=patch.position.x + crop[0],
-                        yoff=patch.position.y + crop[1],
-                    )
 
-                    if (
-                        isinstance(polygon, Polygon)
-                        and polygon.area > args.area_threshold
-                    ):
-                        polygons.append(polygon)
-                    elif isinstance(polygon, MultiPolygon):
-                        for pol in polygon.geoms:
-                            if pol.area > args.area_threshold:
-                                polygons.append(pol)
+                    if isinstance(polygon, Polygon):
+                        polygon = MultiPolygon([polygon])
 
+                    with warnings.catch_warnings():
+                        warnings.simplefilter("ignore")
+                        gs = geopandas.GeoSeries(polygon.geoms)
+                        x0 = patch.position.x + crop[0]
+                        y0 = patch.position.y + crop[1]
+                        gs = gs.translate(
+                            xoff=x0,
+                            yoff=y0,
+                        )
+                        gs = gs.loc[gs.area > args.min_area]
+                        polygon = MultiPolygon(gs.values)
+                        if args.hoverfastfolder is not None:
+                            nuc_gs = geopandas.read_file(
+                                args.hoverfastfolder / f"{slide_path.stem}.gpkg",
+                                bbox=(
+                                    x0,
+                                    y0,
+                                    x0 + args.patch_size,
+                                    y0 + args.patch_size,
+                                ),
+                            )["geometry"]
+                            inter = nuc_gs.intersection(polygon).area
+                            iou = inter / (nuc_gs.area + 1e-7)
+                            gs = nuc_gs.loc[iou > args.iou_threshold]
+                    return gs
+
+                with Pool(processes=args.num_workers) as pool:
+                    all_gs = pool.map(_get_polygons, enumerate(y_hat))
+                    pool.close()
+                    pool.join()
+                for gs in all_gs:
+                    if gs is not None:
+                        polygons.extend(
+                            filter(lambda x: isinstance(x, Polygon), gs.values)
+                        )
+                pbar.set_postfix({"pols": str(len(polygons))})
         polygons = unary_union(polygons)
         if isinstance(polygons, Polygon):
             polygons = MultiPolygon(polygons=[polygons])
-
-        suffix = "_clf" if clf is not None else ""
-        outfolder = args.outfolder / args.ihc_type / f"{version}{suffix}" / "geojsons"
-        if not outfolder.exists():
-            outfolder.mkdir(parents=True)
 
         with open(outfolder / f"{slide_path.stem}.geojson", "w") as f:
             json.dump(geopandas.GeoSeries(polygons.geoms).__geo_interface__, f)

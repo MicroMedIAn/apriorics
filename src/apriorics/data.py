@@ -1,6 +1,6 @@
 import csv
 from os import PathLike
-from typing import Iterator, List, Optional, Sequence, Tuple, Union
+from typing import Callable, Iterator, List, Optional, Sequence, Tuple, Union
 
 import numpy as np
 import torch
@@ -477,13 +477,16 @@ class TestDataset(Dataset):
         patches_path: PathLike,
         transforms: Optional[Sequence[BasicTransform]] = None,
         slide_backend: str = "cucim",
+        patch_filter: Optional[Callable] = None,
     ):
         self.slide = Slide(slide_path, backend=slide_backend)
         self.patches = []
         with open(patches_path, "r") as patch_file:
             reader = csv.DictReader(patch_file)
             for patch in reader:
-                self.patches.append(Patch.from_csv_row(patch))
+                patch = Patch.from_csv_row(patch)
+                if patch_filter is None or patch_filter(patch):
+                    self.patches.append(patch)
         self.transforms = Compose(ifnone(transforms, []))
 
     def __len__(self):

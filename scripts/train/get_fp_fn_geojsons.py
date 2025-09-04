@@ -67,7 +67,7 @@ if __name__ == "__main__":
 
     evalfolder = args.evalfolder / version / "geojsons"
     gtfolder = args.gtfolder
-    hovernetfolder = args.hovernetfolder / args.ihc_type
+    hovernetfolder = args.hovernetfolder
     patchgjfolder = args.trainfolder / f"{args.patch_size}_{args.level}/patch_geojsons"
     regfolder = args.regfolder
 
@@ -77,10 +77,14 @@ if __name__ == "__main__":
     fnfolder = (
         args.evalfolder / version / f"geojsons_fn_{int(args.iou_threshold * 100)}"
     )
+    fullfolder = (
+        args.evalfolder / version / f"geojsons_hover_{int(args.iou_threshold * 100)}"
+    )
     metfolder = args.evalfolder / version / "metrics_hover"
 
     fpfolder.mkdir(exist_ok=True)
     fnfolder.mkdir(exist_ok=True)
+    fullfolder.mkdir(exist_ok=True)
     metfolder.mkdir(exist_ok=True)
 
     precs = []
@@ -99,7 +103,8 @@ if __name__ == "__main__":
 
         print("Loading hovernet data...")
         hover_gs = gpd.read_file(
-            hovernetfolder / evalpath.with_suffix(".gpkg").name, engine="pyogrio"
+            hovernetfolder / evalpath.with_suffix(".gpkg").name,
+            mask=eval_gs,
         )["geometry"]
         print("Merging hovernet and eval...")
         eval_idx, hover_idx = hover_gs.sindex.query(eval_gs)
@@ -109,9 +114,11 @@ if __name__ == "__main__":
             .area
             / hover_gs.loc[hover_idx].area
         )
-        hover_idx = hover_idx[ious > 0.2]
+        hover_idx = hover_idx[ious >= args.iou_threshold]
         eval_gs = hover_gs.loc[np.unique(hover_idx)]
         eval_gs.reset_index(inplace=True, drop=True)
+
+        eval_gs.to_file(fullfolder / evalpath.name)
 
         print("Computing...")
         gt_idx, eval_idx = eval_gs.sindex.query(gt_gs)

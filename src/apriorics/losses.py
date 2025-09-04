@@ -3,6 +3,7 @@ from typing import Sequence, Tuple
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from torchvision.ops import sigmoid_focal_loss
 
 from apriorics.metrics import _flatten, _reduce, dice_score
 
@@ -121,7 +122,7 @@ def focal_loss(
     ce = F.binary_cross_entropy_with_logits(input, target, reduction="none")
     p = torch.sigmoid(input)
     p_t = p * target + (1 - p) * (1 - target)
-    beta_t = beta * target + (1 - beta) * target
+    beta_t = 2 * (beta * target + (1 - beta) * target)
     focal = beta_t * ce * ((1 - p_t) ** gamma)
     return _reduce(focal, reduction=reduction)
 
@@ -142,15 +143,17 @@ class FocalLoss(nn.Module):
             misclassified predictions will have higher weight.
     """
 
-    def __init__(self, beta: float = 0.5, gamma: float = 2.0, reduction: str = "mean"):
+    def __init__(
+        self, alpha: float = 0.25, gamma: float = 2.0, reduction: str = "mean"
+    ):
         super().__init__()
-        self.beta = beta
+        self.alpha = alpha
         self.gamma = gamma
         self.reduction = reduction
 
     def forward(self, input, target):
-        loss = focal_loss(
-            input, target, beta=self.beta, gamma=self.gamma, reduction=self.reduction
+        loss = sigmoid_focal_loss(
+            input, target, alpha=self.alpha, gamma=self.gamma, reduction=self.reduction
         )
         return loss
 

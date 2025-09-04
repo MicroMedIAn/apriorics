@@ -18,5 +18,4 @@ METRICS = {
         SegmentationAUC(),
     ],
     "PHH3": [DetectionSegmentationMetrics(flood_fill=True)],
-    "CD3CD20": [DetectionSegmentationMetrics(flood_fill=False)],
 }

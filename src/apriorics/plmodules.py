@@ -100,8 +100,15 @@ class BasicSegmentationModule(pl.LightningModule):
         self.scheduler_func = scheduler_func
         self.metrics = MetricCollection(ifnone(metrics, []))
         self.stain_augmentor = stain_augmentor
+        self.register_buffer(
+            "mean", torch.tensor([0.867, 0.785, 0.828]).view(1, -1, 1, 1)
+        )
+        self.register_buffer(
+            "std", torch.tensor([0.116, 0.142, 0.113]).view(1, -1, 1, 1)
+        )
 
     def forward(self, x: Tensor) -> Tensor:
+        x = (x - self.mean) / self.std
         return self.model(x).squeeze(1)
 
     def training_step(self, batch: Tuple[Tensor, Tensor], batch_idx: int) -> Tensor:

@@ -9,18 +9,17 @@ from albumentations import (
     MedianBlur,
     OneOf,
     RandomBrightnessContrast,
-    RandomCrop,
     RandomRotate90,
     Transpose,
 )
 
-from apriorics.transforms import ToTensor
+from apriorics.transforms import RandomCropAroundMaskIfExists, ToTensor
 
 
 def get_transforms(name, crop_size):
     transforms = {
         "base": [
-            RandomCrop(crop_size, crop_size),
+            RandomCropAroundMaskIfExists(crop_size, crop_size),
             Flip(),
             Transpose(),
             RandomRotate90(),
