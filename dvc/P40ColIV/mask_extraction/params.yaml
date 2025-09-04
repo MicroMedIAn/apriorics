@@ -28,4 +28,4 @@ slide_download:
   add_tree: true
   clean_previous: true
   import_file: ../../../file_lists/P40ColIV
-  import_ihc: true
+  import_ihc: false

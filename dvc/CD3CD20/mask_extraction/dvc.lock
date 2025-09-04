@@ -3,14 +3,14 @@ stages:
   slide_download:
     cmd: python ../../../scripts/utils/file_transfer.py --data_path ../data --ihc_type
       CD3CD20 --mapping_file ../../../ihc_mapping.json --mask_extension .tif --remote_path
-      /media/AprioricsSlides --slide_extension .svs --add_tree --import_file ../../../file_lists/cd3cd20
-      --import_ihc --extension .svs --rel_path slides --remote_rel_path .
+      /media/AprioricsSlides --slide_extension .svs --add_tree --import_file ../../../file_lists/CD3CD20
+      --extension .svs --rel_path slides --remote_rel_path .
     outs:
     - path: ../data/slides
       hash: md5
-      md5: b7aece06b3214c42267374f6797c831f.dir
-      size: 273981404028
-      nfiles: 160
+      md5: b05e6d1a16f37f2c4614b06cdf29f94e.dir
+      size: 269948462843
+      nfiles: 157
   mask_extraction:
     cmd: python ../../../scripts/mask_extraction/register_extract_polygons_masks_mp.py
       --data_path ../data --ihc_type CD3CD20 --mapping_file ../../../ihc_mapping.json

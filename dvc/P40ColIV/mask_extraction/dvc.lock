@@ -4,14 +4,14 @@ stages:
     cmd: python ../../../scripts/utils/file_transfer.py --data_path ../data --ihc_type
       P40ColIV --mapping_file ../../../ihc_mapping.json --mask_extension .tif --remote_path
       /media/AprioricsSlides --slide_extension .svs --add_tree --clean_previous --import_file
-      ../../../file_lists/P40ColIV --import_ihc --extension .svs --rel_path slides
-      --remote_rel_path .
+      ../../../file_lists/P40ColIV --extension .svs --rel_path slides --remote_rel_path
+      .
     outs:
     - path: ../data/slides
       hash: md5
-      md5: 5ce3651b4ba86680d1552d21ba22bd13.dir
-      size: 496938041504
-      nfiles: 318
+      md5: f640f3e85c028f32481e668503cea28d.dir
+      size: 227421929295
+      nfiles: 129
   mask_extraction:
     cmd: python ../../../scripts/mask_extraction/register_extract_polygons_masks_mp.py
       --data_path ../data --ihc_type P40ColIV --mapping_file ../../../ihc_mapping.json
