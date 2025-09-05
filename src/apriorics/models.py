@@ -1,7 +1,6 @@
 from typing import Optional, Tuple
 
 import numpy as np
-import numpy.typing as npt
 import timm
 import torch
 import torch.nn.functional as F
@@ -191,7 +190,7 @@ class DynamicUnet(nn.Module):
 
     def _register_output_hooks(
         self, input_shape: Tuple[int, int, int] = (3, 224, 224)
-    ) -> Tuple[npt.NDArray[Tuple[int, int], int], npt.NDArray[Tuple[int], int]]:
+    ) -> Tuple[np.ndarray[Tuple[int, int], int], np.ndarray[Tuple[int], int]]:
         sizes, modules = get_sizes(self.encoder, input_shape=input_shape)
         mods = []
         idxs = np.where(sizes[:-1, -1] != sizes[1:, -1])[0]

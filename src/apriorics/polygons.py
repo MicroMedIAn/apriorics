@@ -3,7 +3,6 @@ from os import PathLike
 from typing import Number, Optional, Tuple
 
 import numpy as np
-import numpy.typing as npt
 from albumentations.augmentations.crops.functional import get_center_crop_coords
 from pathaia.util.basic import ifnone
 from pathaia.util.types import NDBoolMask
@@ -13,8 +12,8 @@ from shapely.geometry import MultiPolygon, Polygon, shape
 
 
 def get_reduced_coords(
-    coords: npt.NDArray[Tuple[int, 2], Number], angle_th: float, distance_th: float
-) -> npt.NDArray[Tuple[int, 2], int]:
+    coords: np.ndarray[Tuple[int, 2], Number], angle_th: float, distance_th: float
+) -> np.ndarray[Tuple[int, 2], int]:
     r"""
     Given polygon vertices coordinates, deletes those that are too close or that form
     a too small angle.

@@ -3,7 +3,6 @@ from typing import Any, Dict, Optional, Sequence, Union
 
 import cv2
 import numpy as np
-import numpy.typing as npt
 from pathaia.patches.slide_filters import filter_remove_small_objects
 
 
@@ -12,8 +11,8 @@ def split_data_k_fold(
     k: int = 5,
     test_size: Union[int, float] = 0.1,
     seed: Optional[int] = None,
-    previous_splits: Optional[Dict[str, npt.NDArray]] = None,
-) -> Dict[str, npt.NDArray]:
+    previous_splits: Optional[Dict[str, np.ndarray]] = None,
+) -> Dict[str, np.ndarray]:
     r"""
     Split input data sequence into k folds and a test fold.
 
@@ -81,9 +80,9 @@ def split_data_k_fold_batched(
     k: int = 5,
     test_size: Union[int, float] = 0.1,
     seed: Optional[int] = None,
-    previous_splits: Optional[Dict[str, npt.NDArray]] = None,
+    previous_splits: Optional[Dict[str, np.ndarray]] = None,
     batch_size: int = 10,
-) -> Dict[str, npt.NDArray]:
+) -> Dict[str, np.ndarray]:
     r"""
     Split input data sequence into k folds and a test fold using small batches to ensure
     uniform distribution.
