@@ -1,0 +1,3 @@
+[submodule "submodules/PathAIA"]
+	path = submodules/PathAIA
+	url = https://github.com/MicroMedIAn/PathAIA.git

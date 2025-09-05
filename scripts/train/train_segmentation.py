@@ -379,12 +379,12 @@ if __name__ == "__main__":
     exp = logger.experiment
     exp.log_text(train_val_text)
     trainer = pl.Trainer(
-        gpus=[args.gpu],
+        devices=[args.gpu],
+        accelerator="gpu",
         min_epochs=args.epochs,
         max_epochs=args.epochs,
         logger=logger,
         precision=16,
-        accumulate_grad_batches=args.grad_accumulation,
         callbacks=[ckpt_callback],
         strategy=None,
         num_sanity_val_steps=0,
