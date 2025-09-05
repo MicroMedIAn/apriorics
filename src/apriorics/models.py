@@ -1,10 +1,10 @@
 from typing import Optional, Tuple
 
 import numpy as np
+import numpy.typing as npt
 import timm
 import torch
 import torch.nn.functional as F
-from nptyping import Int, NDArray, Shape
 from torch import nn
 
 from apriorics.model_components.axialnet import (
@@ -191,7 +191,7 @@ class DynamicUnet(nn.Module):
 
     def _register_output_hooks(
         self, input_shape: Tuple[int, int, int] = (3, 224, 224)
-    ) -> Tuple[NDArray[Shape["*, *"], Int], NDArray[Shape["*"], Int]]:
+    ) -> Tuple[npt.NDArray[Tuple[int, int], int], npt.NDArray[Tuple[int], int]]:
         sizes, modules = get_sizes(self.encoder, input_shape=input_shape)
         mods = []
         idxs = np.where(sizes[:-1, -1] != sizes[1:, -1])[0]
@@ -335,7 +335,6 @@ class ResAxialAttentionUNet(nn.Module):
         return nn.Sequential(*layers)
 
     def _forward_impl(self, x):
-
         # AxialAttention Encoder
         x = self.conv1(x)
         x = self.bn1(x)
@@ -536,7 +535,6 @@ class MedTNet(nn.Module):
         return nn.Sequential(*layers)
 
     def _forward_impl(self, x):
-
         xin = x.clone()
         x = self.conv1(x)
         x = self.bn1(x)
@@ -562,7 +560,6 @@ class MedTNet(nn.Module):
 
         for i in range(0, 4):
             for j in range(0, 4):
-
                 x_p = xin[:, :, 32 * i : 32 * (i + 1), 32 * j : 32 * (j + 1)]
                 x_p = self.conv1_p(x_p)
                 x_p = self.bn1_p(x_p)
