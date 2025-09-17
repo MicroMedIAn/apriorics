@@ -55,10 +55,8 @@ class DropAlphaChannel(DualTransform):
 
 
 class ToTensor(DualTransform):
-    def __init__(
-        self, transpose_mask: bool = False, always_apply: bool = True, p: float = 1
-    ):
-        super().__init__(always_apply=always_apply, p=p)
+    def __init__(self, transpose_mask: bool = False, p: float = 1):
+        super().__init__(p=p)
         self.transpose_mask = transpose_mask
 
     @property
@@ -96,7 +94,6 @@ class RandomCropAroundMaskIfExists(CropNonEmptyMaskIfExists):
         width: int,
         ignore_values: Optional[Sequence[int]] = None,
         ignore_channels: Optional[Sequence[int]] = None,
-        always_apply: bool = False,
         p: float = 1.0,
     ):
         super(RandomCropAroundMaskIfExists, self).__init__(
@@ -104,7 +101,6 @@ class RandomCropAroundMaskIfExists(CropNonEmptyMaskIfExists):
             width,
             ignore_values=ignore_values,
             ignore_channels=ignore_channels,
-            always_apply=always_apply,
             p=p,
         )
         self.height = height
@@ -168,7 +164,6 @@ class FixedCropAroundMaskIfExists(CropNonEmptyMaskIfExists):
         width: int,
         ignore_values: Optional[Sequence[int]] = None,
         ignore_channels: Optional[Sequence[int]] = None,
-        always_apply: bool = False,
         p: float = 1.0,
     ):
         super(FixedCropAroundMaskIfExists, self).__init__(
@@ -176,7 +171,6 @@ class FixedCropAroundMaskIfExists(CropNonEmptyMaskIfExists):
             width,
             ignore_values=ignore_values,
             ignore_channels=ignore_channels,
-            always_apply=always_apply,
             p=p,
         )
         self.height = height
@@ -225,10 +219,9 @@ class CorrectCompression(DualTransform):
         self,
         min_size: int = 10,
         area_threshold: int = 10,
-        always_apply: bool = False,
         p: float = 1.0,
     ):
-        super().__init__(always_apply=always_apply, p=p)
+        super().__init__(p=p)
         self.min_size = min_size
         self.area_threshold = area_threshold
 

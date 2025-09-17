@@ -8,11 +8,11 @@ import pytorch_lightning as pl
 import torch
 import yaml
 from albumentations import CenterCrop
+from lightning_fabric.utilities.seed import seed_everything
 from metrics_config import METRICS
 from pathaia.util.paths import get_files
 from pytorch_lightning.callbacks import ModelCheckpoint
 from pytorch_lightning.loggers import CometLogger
-from pytorch_lightning.utilities.seed import seed_everything
 from timm import create_model
 from torch.utils.data import DataLoader
 from transforms_config import get_transforms

@@ -7,10 +7,10 @@ import pandas as pd
 import pytorch_lightning as pl
 import torch
 from albumentations import Flip, RandomBrightnessContrast, RandomRotate90, Transpose
+from lightning_fabric.utilities.seed import seed_everything
 from pathaia.util.paths import get_files
 from pytorch_lightning.callbacks import ModelCheckpoint
 from pytorch_lightning.loggers import CometLogger
-from pytorch_lightning.utilities.seed import seed_everything
 from torch.utils.data import DataLoader
 from torchmetrics import Accuracy, JaccardIndex, Precision, Recall, Specificity
 from torchmetrics.detection.map import MeanAveragePrecision

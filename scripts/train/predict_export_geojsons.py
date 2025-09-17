@@ -7,9 +7,9 @@ import numpy as np
 import pandas as pd
 import torch
 import yaml
+from lightning_fabric.utilities.seed import seed_everything
 from metrics_config import METRICS
 from pathaia.util.paths import get_files
-from pytorch_lightning.utilities.seed import seed_everything
 from shapely.affinity import translate
 from shapely.geometry import MultiPolygon, Polygon
 from shapely.ops import unary_union
