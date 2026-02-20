@@ -1,7 +1,12 @@
-# Tissue masking process
+# APRIORICS process schemas
 
 ## Mask extraction
 ```mermaid
+---
+config:
+  flowchart:
+    defaultRenderer: "elk"
+---
 graph LR
    A{HE slide} --> B[Tissue filtering]
    B --> C{Tissue mask}
@@ -28,4 +33,33 @@ graph LR
    R --> S{Full slide mask}
    L --> T[Store correctly registered patches]
    T --> U{Full registration mask}
+```
+
+## Train and evaluate
+
+```mermaid
+---
+config:
+  flowchart:
+    defaultRenderer: "elk"
+---
+graph LR
+A{HE slides} --> B[Patch extraction from registered zones]
+C{Full registration masks} --> B
+D{Full slide masks} --> B
+A --> E[Slide thumbnail tissue filtering]
+E --> B
+B --> F{Patch csv with annotated pixels count}
+F --> G["Set % of patches with positive pixels for training"]
+G --> H[Randomly select patches]
+H --> I[Extract patches from slide and masks and train]
+A --> I
+D --> I
+I --> J{Trained model}
+J --> K[Evaluate on all patches]
+F --> K
+A --> K
+D --> K
+K --> L{Evaluation metrics}
+K --> M{Predicted masks}
 ```
