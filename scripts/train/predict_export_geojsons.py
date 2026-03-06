@@ -10,18 +10,17 @@ import yaml
 from lightning_fabric.utilities.seed import seed_everything
 from metrics_config import METRICS
 from pathaia.util.paths import get_files
+from segmentation_models_pytorch import create_model
 from shapely.affinity import translate
 from shapely.geometry import MultiPolygon, Polygon
 from shapely.ops import unary_union
 from skimage.morphology import remove_small_holes
-from timm import create_model
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 
 from apriorics.data import get_dataset_cls
 from apriorics.masks import flood_full_mask
 from apriorics.metrics import MetricCollection
-from apriorics.model_components.normalization import group_norm
 from apriorics.plmodules import BasicClassificationModule, BasicSegmentationModule
 from apriorics.polygons import mask_to_polygons_layer
 from apriorics.transforms import ToTensor
@@ -190,21 +189,23 @@ if __name__ == "__main__":
     split_df = split_df.loc[split_df["slide"].isin(patches_paths.map(lambda x: x.stem))]
     val_idxs = (split_df["split"] == args.test_fold).values
 
+    device = torch.device(f"cuda:{args.gpu}")
     model = args.model.split("/")
-    if model[0] == "unet":
+    if len(model) > 1:
         encoder_name = model[1]
     else:
         encoder_name = None
-
-    device = torch.device(f"cuda:{args.gpu}")
-    model = create_model(
-        model[0],
-        encoder_name=encoder_name,
-        pretrained=True,
-        img_size=args.patch_size,
-        num_classes=1,
-        norm_layer=group_norm if args.group_norm else torch.nn.BatchNorm2d,
-    ).eval()
+    kwargs = {
+        "encoder_weights": "imagenet",
+        "classes": 1,
+        # "norm_layer": group_norm if args.group_norm else torch.nn.BatchNorm2d,
+    }
+    if "classification" not in args.data_type:
+        kwargs |= {
+            "encoder_name": encoder_name,
+            "img_size": args.patch_size,
+        }
+    model = create_model(model[0], **kwargs).eval()
     model.requires_grad_(False)
 
     model = BasicSegmentationModule(

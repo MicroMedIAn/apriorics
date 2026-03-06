@@ -1,6 +1,7 @@
 import json
+from numbers import Number
 from os import PathLike
-from typing import Number, Optional, Tuple
+from typing import Optional, Tuple
 
 import numpy as np
 from albumentations.augmentations.crops.functional import get_center_crop_coords

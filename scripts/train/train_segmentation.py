@@ -13,7 +13,7 @@ from metrics_config import METRICS
 from pathaia.util.paths import get_files
 from pytorch_lightning.callbacks import ModelCheckpoint
 from pytorch_lightning.loggers import CometLogger
-from timm import create_model
+from segmentation_models_pytorch import create_model
 from torch.utils.data import DataLoader
 from transforms_config import get_transforms
 
@@ -23,7 +23,6 @@ from apriorics.data import (
     get_dataset_cls,
 )
 from apriorics.losses import get_loss
-from apriorics.model_components.normalization import group_norm
 from apriorics.plmodules import get_model, get_scheduler_func
 from apriorics.stain_augment import StainAugmentor
 from apriorics.transforms import ToTensor
@@ -317,14 +316,14 @@ if __name__ == "__main__":
     )
 
     model = args.model.split("/")
-    if model[0] == "unet":
+    if len(model) > 1:
         encoder_name = model[1]
     else:
         encoder_name = None
     kwargs = {
-        "pretrained": True,
-        "num_classes": 1,
-        "norm_layer": group_norm if args.group_norm else torch.nn.BatchNorm2d,
+        "encoder_weights": "imagenet",
+        "classes": 1,
+        # "norm_layer": group_norm if args.group_norm else torch.nn.BatchNorm2d,
     }
     if "classification" not in args.data_type:
         kwargs |= {
@@ -358,11 +357,11 @@ if __name__ == "__main__":
     logger = CometLogger(
         api_key=os.environ["COMET_API_KEY"],
         workspace="apriorics",
-        save_dir=logfolder,
-        project_name="apriorics",
+        offline_directory=logfolder,
+        project="apriorics",
         auto_metric_logging=False,
-        experiment_name=os.getenv("DVC_EXP_NAME"),
-        offline=args.log_offline,
+        name=os.getenv("DVC_EXP_NAME"),
+        online=not args.log_offline,
         auto_output_logging=False,
     )
 
@@ -386,7 +385,6 @@ if __name__ == "__main__":
         logger=logger,
         precision=16,
         callbacks=[ckpt_callback],
-        strategy=None,
         num_sanity_val_steps=0,
         gradient_clip_val=args.grad_clip,
     )
