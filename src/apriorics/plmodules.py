@@ -151,7 +151,7 @@ class BasicSegmentationModule(pl.LightningModule):
 
         self.metrics(y_hat, y.int(), x=x)
 
-    def validation_epoch_end(self, outputs: Dict[str, Tensor]):
+    def on_validation_epoch_end(self):
         self.log_dict(self.metrics.compute(), sync_dist=True)
         if "SegmentationAUC" in self.metrics:
             met = self.metrics["SegmentationAUC"]
@@ -298,7 +298,7 @@ class BasicDetectionModule(pl.LightningModule):
         self.seg_metrics(masks_pred, masks_gt)
         self.det_metrics(y_hat, y)
 
-    def validation_epoch_end(self, outputs: Dict[str, Tensor]):
+    def on_validation_epoch_end(self):
         self.log_dict(self.seg_metrics.compute(), sync_dist=True)
         det_dict = self.det_metrics.compute()
         self.seg_metrics.reset()
@@ -462,7 +462,7 @@ class BasicClassificationModule(pl.LightningModule):
         self.cm(y_hat, y.int())
         self.hist(y_hat, y)
 
-    def validation_epoch_end(self, outputs: Dict[str, Tensor]):
+    def on_validation_epoch_end(self):
         self.log_dict(self.metrics.compute(), sync_dist=True)
         self.metrics.reset()
 

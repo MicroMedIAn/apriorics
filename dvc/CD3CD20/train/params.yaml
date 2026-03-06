@@ -43,20 +43,19 @@ train:
   batch_size: 64
   data_step: 1
   data_type: segmentation
-  epochs: 3
+  epochs: 5
   fold: 0
   gpu: 0
   level: 0
-  loss: sum_dice_0.25_focal_1
+  loss: sum_bce_0.5_dice_0.5
   lr: 1e-4
-  model: unet/resnet50
+  model: manet/mit_b2
   num_workers: 32
-  p_augment: 0.9
-  p_pos: 0.4
+  p_augment: 0.8
+  p_pos: 0.8
   patch_size: 224
   scheduler: one-cycle
   transforms: base
   wd: 0.1
   group_norm: true
-  resume_version: 1887f4f41c9f454e9a057c6793d4a089
   freeze_encoder: false 

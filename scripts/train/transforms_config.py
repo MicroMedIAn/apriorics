@@ -2,15 +2,16 @@ import cv2
 from albumentations import (
     Affine,
     CenterCrop,
-    Flip,
     GaussianBlur,
     GaussNoise,
+    HorizontalFlip,
     HueSaturationValue,
     MedianBlur,
     OneOf,
     RandomBrightnessContrast,
     RandomRotate90,
     Transpose,
+    VerticalFlip,
 )
 
 from apriorics.transforms import RandomCropAroundMaskIfExists, ToTensor
@@ -20,7 +21,7 @@ def get_transforms(name, crop_size):
     transforms = {
         "base": [
             RandomCropAroundMaskIfExists(crop_size, crop_size),
-            Flip(),
+            OneOf([HorizontalFlip(), VerticalFlip()]),
             Transpose(),
             RandomRotate90(),
             RandomBrightnessContrast(),
@@ -36,17 +37,15 @@ def get_transforms(name, crop_size):
                 p=1,
             ),
             CenterCrop(crop_size, crop_size),
-            Flip(p=0.75),
+            OneOf([HorizontalFlip(), VerticalFlip()], p=0.75),
             OneOf(
                 [
                     GaussianBlur(blur_limit=(1, 7), p=1),
                     MedianBlur(blur_limit=7, p=1),
                     OneOf(
                         [
-                            GaussNoise(var_limit=(0.05 * 255) ** 2, p=1),
-                            GaussNoise(
-                                var_limit=(0.05 * 255) ** 2, per_channel=False, p=1
-                            ),
+                            GaussNoise(std_range=(0, 0.05), p=1),
+                            GaussNoise(std_range=(0, 0.05), per_channel=False, p=1),
                         ],
                         p=1,
                     ),

@@ -11,6 +11,7 @@ from scipy.sparse import load_npz
 from torch.utils.data import Dataset, RandomSampler, Sampler
 from tqdm import tqdm
 
+from apriorics.data_utils import compute_dist
 from apriorics.masks import mask_to_bbox
 
 
@@ -37,6 +38,7 @@ class SegmentationDataset(Dataset):
         mask_paths: Sequence[PathLike],
         patches_paths: Sequence[PathLike],
         transforms: Optional[Sequence[BasicTransform]] = None,
+        return_dists: bool = False,
         slide_backend: str = "cucim",
         step: int = 1,
     ):
@@ -62,6 +64,7 @@ class SegmentationDataset(Dataset):
 
         self.n_pos = np.array(self.n_pos, dtype=np.uint64)
         self.transforms = Compose(ifnone(transforms, []))
+        self.return_dists = return_dists
 
     def __len__(self):
         return len(self.patches)
@@ -83,7 +86,10 @@ class SegmentationDataset(Dataset):
         ).copy()
 
         transformed = self.transforms(image=slide_region, mask=mask_region)
-        return transformed["image"], transformed["mask"]
+        if self.return_dists:
+            transformed["image"], transformed["mask"], compute_dist(transformed["mask"])
+        else:
+            return transformed["image"], transformed["mask"]
 
 
 class SparseSegmentationDataset(Dataset):

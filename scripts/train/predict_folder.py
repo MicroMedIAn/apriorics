@@ -8,8 +8,8 @@ import geopandas
 import numpy as np
 import torch
 from albumentations import Crop
+from lightning_fabric.utilities.seed import seed_everything
 from pathaia.util.paths import get_files
-from pytorch_lightning.utilities.seed import seed_everything
 from shapely.geometry import MultiPolygon, Polygon
 from shapely.ops import unary_union
 from timm import create_model

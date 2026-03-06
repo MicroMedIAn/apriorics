@@ -1,10 +1,11 @@
 schema: '2.0'
 stages:
   slide_download:
-    cmd: python ../../../scripts/utils/file_transfer.py --data_path ../data --ihc_type
-      CD3CD20 --mapping_file ../../../ihc_mapping.json --mask_extension .tif --remote_path
-      /media/AprioricsSlides --seed 42 --slide_extension .svs --split_file ../../../splits.csv
-      --add_tree --clean_previous --import_file ../../../file_lists/CD3CD20 --extension
+    cmd: python ../../../scripts/utils/file_transfer.py --data_path ../data 
+      --ihc_type CD3CD20 --mapping_file ../../../ihc_mapping.json 
+      --mask_extension .tif --remote_path /media/AprioricsSlides --seed 42 
+      --slide_extension .svs --split_file ../../../splits.csv --add_tree 
+      --clean_previous --import_file ../../../file_lists/CD3CD20 --extension 
       .svs --rel_path slides --remote_rel_path .
     outs:
     - path: ../data/slides
@@ -13,12 +14,13 @@ stages:
       size: 273981404028
       nfiles: 160
   generate_patch_csvs:
-    cmd: python ../../../scripts/train/generate_patch_dataset.py --data_path ../data
-      --ihc_type CD3CD20 --mapping_file ../../../ihc_mapping.json --mask_extension
-      .tif --remote_path /media/AprioricsSlides --seed 42 --slide_extension .svs --split_file
-      ../../../splits.csv --export_geojson --filter_pos 0 --level 0 --overlap 0.1
-      --overwrite --patch_size 256 --slidefolder ../data/slides --maskfolder ../data/masks
-      --outfolder ../data/train
+    cmd: python ../../../scripts/train/generate_patch_dataset.py --data_path 
+      ../data --ihc_type CD3CD20 --mapping_file ../../../ihc_mapping.json 
+      --mask_extension .tif --remote_path /media/AprioricsSlides --seed 42 
+      --slide_extension .svs --split_file ../../../splits.csv --export_geojson 
+      --filter_pos 0 --level 0 --overlap 0.1 --overwrite --patch_size 256 
+      --slidefolder ../data/slides --maskfolder ../data/masks --outfolder 
+      ../data/train
     deps:
     - path: ../data/masks
       hash: md5
@@ -37,14 +39,15 @@ stages:
       size: 1277637928
       nfiles: 155
   train:
-    cmd: python ../../../scripts/train/train_segmentation.py --hash_file .model_hash.yaml
-      --data_path ../data --ihc_type CD3CD20 --mapping_file ../../../ihc_mapping.json
-      --mask_extension .tif --remote_path /media/AprioricsSlides --seed 42 --slide_extension
-      .svs --split_file ../../../splits.csv --augment_stain --batch_size 64 --data_step
-      1 --data_type segmentation --epochs 3 --fold 0 --gpu 0 --level 0 --loss sum_dice_0.25_focal_1
-      --lr 0.0001 --model unet/resnet50 --num_workers 32 --p_augment 0.9 --p_pos 0.4
-      --patch_size 224 --scheduler one-cycle --transforms base --wd 0.1 --group_norm
-      --resume_version 1887f4f41c9f454e9a057c6793d4a089 --base_size 256 --slidefolder
+    cmd: python ../../../scripts/train/train_segmentation.py --hash_file 
+      .model_hash.yaml --data_path ../data --ihc_type CD3CD20 --mapping_file 
+      ../../../ihc_mapping.json --mask_extension .tif --remote_path 
+      /media/AprioricsSlides --seed 42 --slide_extension .svs --split_file 
+      ../../../splits.csv --augment_stain --batch_size 64 --data_step 1 
+      --data_type segmentation --epochs 5 --fold 0 --gpu 0 --level 0 --loss 
+      sum_bce_0.5_dice_0.5 --lr 0.0001 --model manet/mit_b2 --num_workers 32 
+      --p_augment 0.8 --p_pos 0.8 --patch_size 224 --scheduler one-cycle 
+      --transforms base --wd 0.1 --group_norm --base_size 256 --slidefolder 
       ../data/slides --maskfolder ../data/masks --trainfolder ../data/train
     deps:
     - path: ../data/train/256_0/patch_csvs
@@ -55,23 +58,24 @@ stages:
     outs:
     - path: ../data/train/logs/apriorics
       hash: md5
-      md5: 27a4cbd041d53e1906028319745c7688.dir
-      size: 32040764461
-      nfiles: 35
+      md5: 3c63324c691f924d5a048fed0faf7b77.dir
+      size: 33721601493
+      nfiles: 39
     - path: .model_hash.yaml
       hash: md5
-      md5: b9196d9bd5bd3a9893bb85738c3e7f34
+      md5: ce2445c710452c4c16b01688f7a8125c
       size: 38
   evaluate:
-    cmd: python ../../../scripts/train/predict_export_geojsons.py --hash_file .model_hash.yaml
-      --outfolder ../data/evaluate --slidefolder ../data/slides --maskfolder ../data/masks
-      --trainfolder ../data/train --data_path ../data --ihc_type CD3CD20 --mapping_file
-      ../../../ihc_mapping.json --mask_extension .tif --remote_path /media/AprioricsSlides
-      --seed 42 --slide_extension .svs --split_file ../../../splits.csv --augment_stain
-      --batch_size 64 --data_step 1 --data_type segmentation --epochs 3 --fold 0 --gpu
-      0 --level 0 --loss sum_dice_0.25_focal_1 --lr 0.0001 --model unet/resnet50 --num_workers
-      32 --p_augment 0.9 --p_pos 0.4 --patch_size 224 --scheduler one-cycle --transforms
-      base --wd 0.1 --group_norm --resume_version 1887f4f41c9f454e9a057c6793d4a089
+    cmd: python ../../../scripts/train/predict_export_geojsons.py --hash_file 
+      .model_hash.yaml --outfolder ../data/evaluate --slidefolder ../data/slides
+      --maskfolder ../data/masks --trainfolder ../data/train --data_path ../data
+      --ihc_type CD3CD20 --mapping_file ../../../ihc_mapping.json 
+      --mask_extension .tif --remote_path /media/AprioricsSlides --seed 42 
+      --slide_extension .svs --split_file ../../../splits.csv --augment_stain 
+      --batch_size 64 --data_step 1 --data_type segmentation --epochs 5 --fold 0
+      --gpu 0 --level 0 --loss sum_bce_0.5_dice_0.5 --lr 0.0001 --model 
+      manet/mit_b2 --num_workers 32 --p_augment 0.8 --p_pos 0.8 --patch_size 224
+      --scheduler one-cycle --transforms base --wd 0.1 --group_norm 
       --area_threshold 100 --iou_threshold 0.5 --test_fold test
     deps:
     - path: ../data/train/224_0/patch_csvs
@@ -81,24 +85,26 @@ stages:
       nfiles: 155
     - path: ../data/train/logs/apriorics
       hash: md5
-      md5: 27a4cbd041d53e1906028319745c7688.dir
-      size: 32040764461
-      nfiles: 35
+      md5: 3c63324c691f924d5a048fed0faf7b77.dir
+      size: 33721601493
+      nfiles: 39
     - path: .model_hash.yaml
       hash: md5
-      md5: b9196d9bd5bd3a9893bb85738c3e7f34
+      md5: ce2445c710452c4c16b01688f7a8125c
       size: 38
     outs:
     - path: ../data/evaluate/
       hash: md5
-      md5: a21e47b63b479798fc3abccb257d98df.dir
-      size: 4613703986
-      nfiles: 275
+      md5: ae6c153556ff53b4d6e942a81a08ae1e.dir
+      size: 5793606862
+      nfiles: 316
   geojson_upload:
-    cmd: python ../../../scripts/utils/file_transfer.py --data-path /media/AprioricsSlides
-      --remote-path /data/anapath/AprioricsSlides --ihc-type PHH3 --mapping-file ../../../ihc_mapping.json
-      --extension .geojson --rel-path evaluate/PHH3/ded42532bb854013b19b85b14c5aabdb/geojsons
-      --remote-rel-path evaluate/PHH3/ded42532bb854013b19b85b14c5aabdb/geojsons
+    cmd: python ../../../scripts/utils/file_transfer.py --data-path 
+      /media/AprioricsSlides --remote-path /data/anapath/AprioricsSlides 
+      --ihc-type PHH3 --mapping-file ../../../ihc_mapping.json --extension 
+      .geojson --rel-path 
+      evaluate/PHH3/ded42532bb854013b19b85b14c5aabdb/geojsons --remote-rel-path 
+      evaluate/PHH3/ded42532bb854013b19b85b14c5aabdb/geojsons
     deps:
     - path: 
         /data/anapath/AprioricsSlides/evaluate/PHH3/ded42532bb854013b19b85b14c5aabdb/geojsons
@@ -110,15 +116,16 @@ stages:
     deps:
     - path: .fp_fn_done.yaml
       hash: md5
-      md5: 4faf8dbd2c1e976b2c35f46fc4c63db6
+      md5: ce2445c710452c4c16b01688f7a8125c
       size: 38
   generate_patch_csvs_eval:
-    cmd: python ../../../scripts/train/generate_patch_dataset.py --data_path ../data
-      --ihc_type CD3CD20 --mapping_file ../../../ihc_mapping.json --mask_extension
-      .tif --remote_path /media/AprioricsSlides --seed 42 --slide_extension .svs --split_file
-      ../../../splits.csv --level 0 --overlap 0.1 --overwrite true --export_geojson
-      true --patch_size 224 --slidefolder ../data/slides --maskfolder ../data/masks
-      --outfolder ../data/train --regfolder ../data/registration_geojsons
+    cmd: python ../../../scripts/train/generate_patch_dataset.py --data_path 
+      ../data --ihc_type CD3CD20 --mapping_file ../../../ihc_mapping.json 
+      --mask_extension .tif --remote_path /media/AprioricsSlides --seed 42 
+      --slide_extension .svs --split_file ../../../splits.csv --level 0 
+      --overlap 0.1 --overwrite true --export_geojson true --patch_size 224 
+      --slidefolder ../data/slides --maskfolder ../data/masks --outfolder 
+      ../data/train --regfolder ../data/registration_geojsons
     deps:
     - path: ../data/masks
       hash: md5
@@ -137,22 +144,25 @@ stages:
       size: 1105260100
       nfiles: 155
   get_fp_fn_geojsons:
-    cmd: python ../../../scripts/train/get_fp_fn_geojsons.py --hash_file .model_hash.yaml
-      --done_file .fp_fn_done.yaml --evalfolder ../data/evaluate --gtfolder ../data/geojsons
-      --hovernetfolder ../data/hoverfast_gpkgs --trainfolder ../data/train --regfolder
-      ../data/registration_geojsons --data_path ../data --ihc_type CD3CD20 --mapping_file
-      ../../../ihc_mapping.json --mask_extension .tif --remote_path /media/AprioricsSlides
-      --seed 42 --slide_extension .svs --split_file ../../../splits.csv --augment_stain
-      --batch_size 32 --data_step 1 --data_type segmentation --epochs 5 --fold 0 --gpu
-      0 --level 0 --loss dice --lr 0.0001 --model unet/resnet50 --num_workers 32 --p_augment
-      0.8 --p_pos 0.99 --patch_size 224 --scheduler one-cycle --transforms base --wd
-      0.1 --area_threshold 100 --iou_threshold 0.5 --test_fold test
+    cmd: python ../../../scripts/train/get_fp_fn_geojsons.py --hash_file 
+      .model_hash.yaml --done_file .fp_fn_done.yaml --evalfolder 
+      ../data/evaluate --gtfolder ../data/geojsons --hovernetfolder 
+      ../data/hoverfast_gpkgs --trainfolder ../data/train --regfolder 
+      ../data/registration_geojsons --data_path ../data --ihc_type CD3CD20 
+      --mapping_file ../../../ihc_mapping.json --mask_extension .tif 
+      --remote_path /media/AprioricsSlides --seed 42 --slide_extension .svs 
+      --split_file ../../../splits.csv --augment_stain --batch_size 64 
+      --data_step 1 --data_type segmentation --epochs 5 --fold 0 --gpu 0 --level
+      0 --loss sum_bce_0.5_dice_0.5 --lr 0.0001 --model manet/mit_b2 
+      --num_workers 32 --p_augment 0.8 --p_pos 0.8 --patch_size 224 --scheduler 
+      one-cycle --transforms base --wd 0.1 --group_norm --area_threshold 100 
+      --iou_threshold 0.5 --test_fold test
     deps:
     - path: ../data/evaluate/
       hash: md5
-      md5: b06f1668669ed5b93114fed79d763926.dir
-      size: 1115436861
-      nfiles: 144
+      md5: 17dee425eb314fd0d0633cfad6fba155.dir
+      size: 6884815349
+      nfiles: 373
     - path: ../data/registration_geojsons
       hash: md5
       md5: 13d3f19ffe9ca01bf80190561b633c80.dir
@@ -165,10 +175,10 @@ stages:
       nfiles: 155
     - path: .model_hash.yaml
       hash: md5
-      md5: 4faf8dbd2c1e976b2c35f46fc4c63db6
+      md5: ce2445c710452c4c16b01688f7a8125c
       size: 38
     outs:
     - path: .fp_fn_done.yaml
       hash: md5
-      md5: 4faf8dbd2c1e976b2c35f46fc4c63db6
+      md5: ce2445c710452c4c16b01688f7a8125c
       size: 38

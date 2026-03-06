@@ -7,10 +7,10 @@ import pandas as pd
 import pytorch_lightning as pl
 import torch
 from albumentations import Flip, RandomBrightnessContrast, RandomRotate90, Transpose
+from lightning_fabric.utilities.seed import seed_everything
 from pathaia.util.paths import get_files
 from pytorch_lightning.callbacks import ModelCheckpoint
 from pytorch_lightning.loggers import CometLogger
-from pytorch_lightning.utilities.seed import seed_everything
 from torch.utils.data import DataLoader
 from torchmetrics import Accuracy, JaccardIndex, Precision, Recall, Specificity
 from torchmetrics.detection.map import MeanAveragePrecision
@@ -333,12 +333,12 @@ if __name__ == "__main__":
     )
 
     trainer = pl.Trainer(
-        gpus=[args.gpu],
+        devices=[args.gpu],
+        accelerator="gpu",
         min_epochs=args.epochs,
         max_epochs=args.epochs,
         logger=logger,
         precision=16,
-        accumulate_grad_batches=args.grad_accumulation,
         callbacks=[ckpt_callback],
         strategy=None,
     )

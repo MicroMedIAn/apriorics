@@ -3,7 +3,7 @@ from typing import Sequence, Tuple
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from torchvision.ops import sigmoid_focal_loss
+from segmentation_models_pytorch.losses import DiceLoss, FocalLoss
 
 from apriorics.metrics import _flatten, _reduce, dice_score
 
@@ -24,9 +24,9 @@ def get_loss(name: str) -> nn.Module:
     if split_name[0] == "bce":
         return nn.BCEWithLogitsLoss()
     elif split_name[0] == "focal":
-        return FocalLoss()
+        return FocalLoss("binary", alpha=0.25, gamme=2)
     elif split_name[0] == "dice":
-        return DiceLoss()
+        return DiceLoss("binary", smooth=1)
     elif split_name[0] == "sum":
         names = split_name[1::2]
         coefs = map(float, split_name[2::2])
@@ -127,54 +127,13 @@ def focal_loss(
     return _reduce(focal, reduction=reduction)
 
 
-class FocalLoss(nn.Module):
-    r"""
-    `torch.nn.Module` for focal loss (given by
-    :math:`FL(y, t) = -\beta t(1-y)^\gamma \log{y} - (1-\beta)(1-t)(y^\gamma \log{y})`)
-    computation.
-
-    Args:
-        reduction: reduction method for computed dice scores. Can be one of "mean",
-            "sum" or "none".
-        beta: coefficient ratio for positive class. Negative class has coefficient
-            `1-beta`.
-        gamma: focusing parameter for focal loss. When `gamma=0`, focal loss is
-            equivalent to binary cros-sentropy. When `gamma` increases, highly
-            misclassified predictions will have higher weight.
-    """
-
-    def __init__(
-        self, alpha: float = 0.25, gamma: float = 2.0, reduction: str = "mean"
-    ):
-        super().__init__()
-        self.alpha = alpha
-        self.gamma = gamma
+class BoundaryLoss:
+    def __init__(self, reduction: str = "mean"):
         self.reduction = reduction
 
-    def forward(self, input, target):
-        loss = sigmoid_focal_loss(
-            input, target, alpha=self.alpha, gamma=self.gamma, reduction=self.reduction
-        )
-        return loss
-
-
-class DiceLoss(nn.Module):
-    r"""
-    `torch.nn.Module` for dice loss (given by 1-dice_score) computation.
-
-    Args:
-        smooth: smooth value for dice score.
-        reduction: reduction method for computed dice scores. Can be one of "mean",
-            "sum" or "none".
-    """
-
-    def __init__(self, smooth: float = 1, reduction: str = "mean"):
-        super().__init__()
-        self.smooth = smooth
-        self.reduction = reduction
-
-    def forward(self, input, target):
-        loss = dice_loss(input, target, smooth=self.smooth, reduction=self.reduction)
+    def __call__(self, probs: torch.Tensor, dist_maps: torch.Tensor) -> torch.Tensor:
+        loss = torch.einsum("bwh,bwh->bwh", probs, dist_maps)
+        loss = _reduce(loss, reduction=self.reduction)
         return loss
 
 
