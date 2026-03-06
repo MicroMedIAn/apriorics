@@ -1,10 +1,9 @@
-import json
 import warnings
 from argparse import ArgumentParser
 from multiprocessing import Pool
 from pathlib import Path
 
-import geopandas
+import geopandas as gpd
 import numpy as np
 import torch
 from albumentations import Crop
@@ -314,7 +313,7 @@ if __name__ == "__main__":
 
                     with warnings.catch_warnings():
                         warnings.simplefilter("ignore")
-                        gs = geopandas.GeoSeries(polygon.geoms)
+                        gs = gpd.GeoSeries(polygon.geoms)
                         x0 = patch.position.x + crop[0]
                         y0 = patch.position.y + crop[1]
                         gs = gs.translate(
@@ -324,7 +323,7 @@ if __name__ == "__main__":
                         gs = gs.loc[gs.area > args.min_area]
                         polygon = MultiPolygon(gs.values)
                         if args.hoverfastfolder is not None:
-                            nuc_gs = geopandas.read_file(
+                            nuc_gs = gpd.read_file(
                                 args.hoverfastfolder / f"{slide_path.stem}.gpkg",
                                 bbox=(
                                     x0,
@@ -352,5 +351,4 @@ if __name__ == "__main__":
         if isinstance(polygons, Polygon):
             polygons = MultiPolygon(polygons=[polygons])
 
-        with open(outfolder / f"{slide_path.stem}.geojson", "w") as f:
-            json.dump(geopandas.GeoSeries(polygons.geoms).__geo_interface__, f)
+        gpd.GeoSeries(polygons.geoms).to_file(outfolder / f"{slide_path.stem}.geojson")

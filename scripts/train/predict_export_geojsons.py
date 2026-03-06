@@ -2,7 +2,7 @@ import json
 from argparse import ArgumentParser
 from pathlib import Path
 
-import geopandas
+import geopandas as gpd
 import numpy as np
 import pandas as pd
 import torch
@@ -140,8 +140,8 @@ parser.add_argument(
 )
 parser.add_argument(
     "--mask_extension",
-    default=".tif",
-    help="File extension of mask files. Default .tif.",
+    default=".gpkg",
+    help="File extension of mask files. Default .gpkg.",
 )
 parser.add_argument("--fold", default="0", help="Fold used for validation. Default 0.")
 parser.add_argument(
@@ -312,8 +312,7 @@ if __name__ == "__main__":
         if not outfolder.exists():
             outfolder.mkdir(parents=True)
 
-        with open(outfolder / f"{slide_path.stem}.geojson", "w") as f:
-            json.dump(geopandas.GeoSeries(polygons.geoms).__geo_interface__, f)
+        gpd.GeoSeries(polygons.geoms).to_file(outfolder / f"{slide_path.stem}.geojson")
 
         metrics_results = metrics.compute()
         metrics_results = {

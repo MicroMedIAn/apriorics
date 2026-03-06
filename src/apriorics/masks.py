@@ -2,10 +2,12 @@ from multiprocessing import Array
 from typing import Callable, List, Optional, Tuple, Union
 
 import cv2
+import geopandas as gpd
 import numpy as np
 import torch
-from pathaia.util.types import NDBoolMask, NDByteGrayImage, NDImage
+from pathaia.util.types import NDBoolMask, NDByteGrayImage, NDImage, Patch, PathLike
 from PIL.Image import Image
+from rasterio.features import rasterize
 from scipy import ndimage as ndi
 from skimage.color import rgb2hed, rgb2hsv
 from skimage.filters import threshold_otsu
@@ -559,3 +561,18 @@ def mask_to_bbox(mask: Union[NDBoolMask, torch.Tensor], pad: int = 5, min_size=1
     if tensor:
         bboxes, masks = torch.as_tensor(bboxes), torch.as_tensor(masks)
     return bboxes, masks
+
+
+def read_mask_from_gpkg(mask_path: PathLike, patch: Patch, dsr: float):
+    pols = gpd.read_file(
+        mask_path,
+        engine="pyogrio",
+        bbox=(*patch.position, *(patch.position + patch.size_0)),
+    )["geometry"]
+    x, y = patch.position
+    mask = rasterize(
+        pols.values,
+        out_shape=patch.size,
+        transform=(dsr, 0, x, 0, dsr, y),
+    )
+    return mask

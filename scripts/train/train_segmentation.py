@@ -186,7 +186,7 @@ parser.add_argument(
 )
 parser.add_argument(
     "--mask_extension",
-    default=".tif",
+    default=".gpkg",
     help="File extension of slide files. Default .svs.",
 )
 parser.add_argument(

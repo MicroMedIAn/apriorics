@@ -1,18 +1,14 @@
 import csv
-import json
 from argparse import ArgumentParser
 from multiprocessing import Pool
 from pathlib import Path
 
-import geopandas
-import numpy as np
+import geopandas as gpd
 from pathaia.patches.functional_api import slide_rois_no_image
 from pathaia.util.paths import get_files
 from pathaia.util.types import Patch, Slide
-from scipy.sparse import load_npz
 from shapely.geometry import MultiPolygon, Polygon, box
 from shapely.ops import unary_union
-from skimage.morphology import remove_small_objects
 
 from apriorics.dataset_preparation import filter_thumbnail_mask_extraction
 
@@ -51,11 +47,6 @@ parser.add_argument(
 parser.add_argument(
     "--slide_extension",
     default=".svs",
-    help="File extension of slide files. Default .svs.",
-)
-parser.add_argument(
-    "--mask_extension",
-    default=".tif",
     help="File extension of slide files. Default .svs.",
 )
 parser.add_argument(
@@ -128,22 +119,17 @@ if __name__ == "__main__":
         if args.maskfolder is not None:
             mask_path = args.maskfolder / in_file_path.relative_to(
                 args.slidefolder / "HE"
-            ).with_suffix(args.mask_extension)
+            ).with_suffix(".gpkg")
             if not mask_path.exists():
                 return
-
-            if args.mask_extension == ".tif":
-                mask = Slide(mask_path, backend="cucim")
-            elif args.mask_extension == ".npz":
-                mask = load_npz(mask_path)
         else:
-            mask = None
+            mask_path = None
 
         if args.regfolder is not None:
             reg_path = args.regfolder / f"{in_file_path.stem}.geojson"
             if not reg_path.exists():
                 return
-            gdf = geopandas.read_file(reg_path)
+            gdf = gpd.read_file(reg_path)
             gdf = gdf.loc[gdf["geometry"].is_valid]
         else:
             gdf = None
@@ -164,30 +150,18 @@ if __name__ == "__main__":
             writer = csv.DictWriter(out_file, fieldnames=Patch.get_fields() + ["n_pos"])
             writer.writeheader()
             for patch in patches:
+                x, y = patch.position
+                w, h = patch.size
+                pol = box(x, y, x + w, y + h)
                 if gdf is not None:
-                    x, y = patch.position
-                    w, h = patch.size
-                    pol = box(x, y, x + w, y + h)
                     if not gdf["geometry"].contains(pol).any():
                         continue
 
-                if mask is not None:
-                    if isinstance(mask, Slide):
-                        patch_mask = np.asarray(
-                            mask.read_region(
-                                patch.position, patch.level, patch.size
-                            ).convert("1")
-                        )
-                    else:
-                        w, h = patch.size
-                        x, y = patch.position
-                        patch_mask = mask[y : y + h, x : x + w].toarray()
-
-                    if args.filter_pos and patch_mask.sum():
-                        patch_mask = remove_small_objects(
-                            patch_mask, min_size=args.filter_pos
-                        )
-                    n_pos = patch_mask.sum()
+                if mask_path is not None:
+                    mask = gpd.read_file(mask_path, engine="pyogrio", bbox=pol)[
+                        "geometry"
+                    ]
+                    n_pos = mask.area.sum()
                 else:
                     n_pos = None
 
@@ -196,18 +170,15 @@ if __name__ == "__main__":
                 if n_pos is None or n_pos >= args.filter_pos:
                     writer.writerow(row)
                     if args.export_geojson:
-                        x, y = patch.position
-                        w, h = patch.size
-                        pols.append(box(x, y, x + w, y + h))
+                        pols.append(pol)
 
         if args.export_geojson:
             pols = unary_union(pols)
             if isinstance(pols, Polygon):
                 pols = MultiPolygon([pols])
-            with open(
-                geojsonfolder / in_file_path.with_suffix(".geojson").name, "w"
-            ) as f:
-                json.dump(geopandas.GeoSeries(pols.geoms).__geo_interface__, f)
+            gpd.GeoSeries(pols.geoms).to_file(
+                geojsonfolder / in_file_path.with_suffix(".geojson").name
+            )
 
     with Pool(processes=args.num_workers) as pool:
         pool.map(write_patches, input_files)

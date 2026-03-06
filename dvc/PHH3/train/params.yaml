@@ -2,7 +2,7 @@ base:
   data_path: ../data
   ihc_type: PHH3
   mapping_file: ../../../ihc_mapping.json
-  mask_extension: .npz
+  mask_extension: .gpkg
   remote_path: /media/AprioricsSlides
   seed: 42
   slide_extension: .svs
@@ -13,9 +13,9 @@ evaluate:
   test_fold: test
 local:
   evaluate_path: evaluate
-  geojson_path: geojsons
+  geojson_path: gt_geojsons
   hovernet_path: hovernet_gpkgs
-  mask_path: masks
+  mask_path: gt_gpkgs
   reg_path: registration_geojsons
   slide_path: slides
   train_path: train
@@ -29,8 +29,8 @@ patches:
   patch_size: 256
 remote:
   evaluate_path: evaluate
-  geojson_path: geojsons
-  mask_path: masks
+  geojson_path: gt_geojsons
+  mask_path: gt_gpkgs
   slide_path: .
   train_path: train
   wkt_path: wkts

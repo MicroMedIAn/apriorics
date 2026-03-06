@@ -1,9 +1,7 @@
 from argparse import ArgumentParser
-from ctypes import c_bool
 from functools import partial
-from multiprocessing import Array, Lock, Pool, current_process
+from multiprocessing import Pool, current_process
 from pathlib import Path
-from subprocess import run
 
 import docker
 import geopandas
@@ -13,13 +11,12 @@ from pathaia.patches import slide_rois_no_image
 from pathaia.util.paths import get_files
 from pathaia.util.types import Coord, Patch, Slide
 from PIL import Image
-from rasterio.features import rasterize
 from shapely.affinity import translate
 from shapely.geometry import MultiPolygon, Polygon, box
 from shapely.ops import unary_union
 
 from apriorics.dataset_preparation import filter_thumbnail_mask_extraction
-from apriorics.masks import get_mask_function, get_tissue_mask, update_full_mask_mp
+from apriorics.masks import get_mask_function, get_tissue_mask
 from apriorics.polygons import mask_to_polygons_layer, update_pols_hovernet
 from apriorics.registration import full_registration, get_coord_transform
 
@@ -219,13 +216,11 @@ def get_patch_iter(slide_he, psize, interval, hovernet_path, tissue_path):
         yield patch, fgdf
 
 
-def pool_init_func(arg_slide_he, arg_slide_ihc, arg_full_mask):
+def pool_init_func(arg_slide_he, arg_slide_ihc):
     global slide_he
     global slide_ihc
-    global full_mask
     slide_he = arg_slide_he
     slide_ihc = arg_slide_ihc
-    full_mask = arg_full_mask
 
 
 def register_extract_mask(args, patch_gdf):
@@ -324,14 +319,6 @@ def register_extract_mask(args, patch_gdf):
             nuc_max_size=args.nuc_max_size,
         )
         polygons = translate(moved_polygons, -x - crop, -y - crop)
-        if polygons.geoms:
-            mask = rasterize(polygons.geoms, patch_he.size, dtype=np.uint8).astype(bool)
-        else:
-            mask = np.zeros(patch_he.size, dtype=bool)
-
-    update_full_mask_mp(
-        full_mask, mask, *(patch_he.position + crop), *slide_he.dimensions
-    )
 
     res = container.exec_run("rm -rf /data/*", stream=True)
 
@@ -386,9 +373,7 @@ def main(args):
 
     if args.hovernet_path is not None:
         hovernetfolder = args.data_path / args.hovernet_path
-        hovernetfiles = get_files(
-            hovernetfolder, extensions=".gpkg", recurse=False
-        )
+        hovernetfiles = get_files(hovernetfolder, extensions=".gpkg", recurse=False)
         hovernetnames = OrderedSet(hovernetfiles.map(lambda x: x.stem.split("-")[0]))
         inter = inter & hovernetnames
         hovernetfiles = hovernetfiles[hovernetnames.index(inter)]
@@ -412,28 +397,25 @@ def main(args):
             tissuefile = None
 
         maskpath = maskfolder / hefile.relative_to(slidefolder / "HE").with_suffix(
-            ".png"
+            ".gpkg"
         )
         if not maskpath.parent.exists():
             maskpath.parent.mkdir(parents=True)
 
-        if maskpath.with_suffix(".tif").exists() or (maskpath).exists():
+        if maskpath.exists():
             continue
 
         print(hefile, ihcfile)
 
         slide_he = Slide(hefile, backend="cucim")
         slide_ihc = Slide(ihcfile, backend="cucim")
-        w, h = slide_he.dimensions
 
-        lock = Lock()
-        full_mask = Array(c_bool, h * w, lock=lock)
         _register_extract_mask = partial(register_extract_mask, args)
 
         with Pool(
             processes=args.num_workers,
             initializer=pool_init_func,
-            initargs=(slide_he, slide_ihc, full_mask),
+            initargs=(slide_he, slide_ihc),
         ) as pool:
             patch_iter = get_patch_iter(
                 slide_he, args.psize, interval, hovernetfile, tissuefile
@@ -488,26 +470,11 @@ def main(args):
                 pols.append(pol)
             obj_polygons = unary_union(pols)
 
-        geopandas.GeoSeries(obj_polygons.geoms).to_file(geojsonfile)
+        gs = geopandas.GeoSeries(obj_polygons.geoms)
+        gs.to_file(geojsonfile)
+        gs.to_file(maskpath)
 
         print("Polygons saved.")
-
-        print("Saving mask...")
-
-        full_mask_np = np.frombuffer(full_mask.get_obj(), dtype=bool).reshape(h, w)
-        Image.fromarray(full_mask_np).convert("RGB").save(maskpath)
-        if not args.novips:
-            vips_cmd = (
-                f"vips tiffsave {maskpath} {maskpath.with_suffix('.tif')} "
-                "--compression jpeg --Q 100 --tile-width 256 --tile-height 256 --tile "
-                "--pyramid"
-            )
-
-            run(vips_cmd.split())
-
-            maskpath.unlink()
-
-        print("Mask saved.")
 
     client = docker.from_env()
     client.containers.run(

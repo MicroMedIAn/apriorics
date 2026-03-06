@@ -12,7 +12,7 @@ from torch.utils.data import Dataset, RandomSampler, Sampler
 from tqdm import tqdm
 
 from apriorics.data_utils import compute_dist
-from apriorics.masks import mask_to_bbox
+from apriorics.masks import mask_to_bbox, read_mask_from_gpkg
 
 
 class SegmentationDataset(Dataset):
@@ -44,16 +44,15 @@ class SegmentationDataset(Dataset):
     ):
         super().__init__()
         self.slides = []
-        self.masks = []
+        self.mask_paths = mask_paths
         self.patches = []
         self.slide_idxs = []
         self.n_pos = []
 
-        for slide_idx, (patches_path, slide_path, mask_path) in enumerate(
-            zip(patches_paths, slide_paths, mask_paths)
+        for slide_idx, (patches_path, slide_path) in enumerate(
+            zip(patches_paths, slide_paths)
         ):
             self.slides.append(Slide(slide_path, backend=slide_backend))
-            self.masks.append(Slide(mask_path, backend=slide_backend))
             with open(patches_path, "r") as patch_file:
                 reader = csv.DictReader(patch_file)
                 for k, patch in enumerate(reader):
@@ -75,15 +74,13 @@ class SegmentationDataset(Dataset):
         patch = self.patches[idx]
         slide_idx = self.slide_idxs[idx]
         slide = self.slides[slide_idx]
-        mask = self.masks[slide_idx]
 
-        slide_region = np.asarray(
+        slide_region = np.array(
             slide.read_region(patch.position, patch.level, patch.size).convert("RGB")
-        ).copy()
-        mask_region = np.asarray(
-            mask.read_region(patch.position, patch.level, patch.size).convert("1"),
-            dtype=np.float32,
-        ).copy()
+        )
+        mask_region = read_mask_from_gpkg(
+            self.mask_paths[slide_idx], patch, slide.level_downsamples[patch.level]
+        )
 
         transformed = self.transforms(image=slide_region, mask=mask_region)
         if self.return_dists:
