@@ -3,16 +3,16 @@ stages:
   slide_download:
     cmd: python ../../../scripts/utils/file_transfer.py --data_path ../data 
       --ihc_type P40ColIV --mapping_file ../../../ihc_mapping.json 
-      --mask_extension .tif --remote_path /media/AprioricsSlides 
+      --mask_extension .gpkg --remote_path /media/AprioricsSlides 
       --slide_extension .svs --add_tree --clean_previous --import_file 
       ../../../file_lists/P40ColIV --extension .svs --rel_path slides 
       --remote_rel_path .
     outs:
     - path: ../data/slides
       hash: md5
-      md5: f640f3e85c028f32481e668503cea28d.dir
-      size: 227421929295
-      nfiles: 129
+      md5: d2461c92e13ee0254a6d85649bd71afc.dir
+      size: 615050602824
+      nfiles: 354
   mask_extraction:
     cmd: python 
       ../../../scripts/mask_extraction/register_extract_polygons_masks_mp.py 
@@ -32,9 +32,9 @@ stages:
     outs:
     - path: ../data/gt_geojsons
       hash: md5
-      md5: 7b882ace6e00c744119a39c4c2cc59c0.dir
-      size: 105505239
-      nfiles: 23
+      md5: caffb350db82815148a8f1ad41350f4c.dir
+      size: 2039669555
+      nfiles: 353
     - path: ../data/gt_gpkgs
       hash: md5
       md5: a4bea67c899e8fcff22b9f1dfe195335.dir
@@ -42,15 +42,15 @@ stages:
       nfiles: 353
     - path: ../data/registration_geojsons
       hash: md5
-      md5: 8aed77186200cb679e29c16d6ad0d376.dir
-      size: 131185
-      nfiles: 29
+      md5: 116b9d6e9b94914694bd7abf72a8d8ae.dir
+      size: 1748781
+      nfiles: 354
   geojson_upload:
     cmd: rsync -au ../data/gt_geojsons/ 
       /media/AprioricsSlides/gt_geojsons/P40ColIV/
     deps:
     - path: ../data/gt_geojsons
       hash: md5
-      md5: 7b882ace6e00c744119a39c4c2cc59c0.dir
-      size: 105505239
-      nfiles: 23
+      md5: caffb350db82815148a8f1ad41350f4c.dir
+      size: 2039669555
+      nfiles: 353

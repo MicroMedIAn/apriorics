@@ -1,11 +1,12 @@
 schema: '2.0'
 stages:
   slide_download:
-    cmd: python ../../../scripts/utils/file_transfer.py --data_path ../data --ihc_type
-      AE1AE3 --mapping_file ../../../ihc_mapping.json --mask_extension .tif --remote_path
-      /media/AprioricsSlides/ --slide_extension .svs --add_tree --clean_previous --import_ihc
-      --import_file ../../../file_lists/AE1AE3 --extension .svs --rel_path slides
-      --remote_rel_path .
+    cmd: python ../../../scripts/utils/file_transfer.py --data_path ../data 
+      --ihc_type AE1AE3 --mapping_file ../../../ihc_mapping.json 
+      --mask_extension .tif --remote_path /media/AprioricsSlides/ 
+      --slide_extension .svs --add_tree --clean_previous --import_ihc 
+      --import_file ../../../file_lists/AE1AE3 --extension .svs --rel_path 
+      slides --remote_rel_path .
     outs:
     - path: ../data/slides
       hash: md5
@@ -13,13 +14,15 @@ stages:
       size: 483136813186
       nfiles: 302
   mask_extraction:
-    cmd: python ../../../scripts/mask_extraction/register_extract_polygons_masks_mp.py
-      --data_path ../data --ihc_type AE1AE3 --mapping_file ../../../ihc_mapping.json
-      --mask_extension .tif --remote_path /media/AprioricsSlides/ --slide_extension
-      .svs --binary_op closing --dab_thr 0.03 --object_min_size 1000 --hole_min_size
-      10000 --overlap 0.3 --num_workers 30 --psize 5000 --radius 10 --geojson_path
-      geojsons --log_path registration_geojsons --main_slide_path slides --slide_path
-      slides_tmp --mask_path masks --tissue_path tissue_geojsons
+    cmd: python 
+      ../../../scripts/mask_extraction/register_extract_polygons_masks_mp.py 
+      --data_path ../data --ihc_type AE1AE3 --mapping_file 
+      ../../../ihc_mapping.json --mask_extension .gpkg --remote_path 
+      /media/AprioricsSlides/ --slide_extension .svs --binary_op closing 
+      --dab_thr 0.03 --object_min_size 1000 --hole_min_size 10000 --overlap 0.3 
+      --num_workers 40 --psize 5000 --radius 10 --geojson_path gt_geojsons 
+      --log_path registration_geojsons --main_slide_path slides --slide_path 
+      slides_tmp --mask_path gt_gpkgs --tissue_path tissue_geojsons
     deps:
     - path: ../data/slides
       hash: md5
@@ -27,26 +30,27 @@ stages:
       size: 483136813186
       nfiles: 302
     outs:
-    - path: ../data/geojsons
+    - path: ../data/gt_geojsons
       hash: md5
-      md5: 678c0fabdb4a934381447edf77c359f7.dir
-      size: 22234066317
+      md5: dcbf9ae9a99bb98c950c772465562879.dir
+      size: 20764456150
       nfiles: 151
-    - path: ../data/masks
+    - path: ../data/gt_gpkgs
       hash: md5
-      md5: 038a673a5e4a8c8b3822a9c1dc2930f9.dir
-      size: 177026784151
+      md5: 2c3dbef68df3cdc72951c7f6601171d6.dir
+      size: 16437407744
       nfiles: 151
     - path: ../data/registration_geojsons
       hash: md5
-      md5: 176bfcf3752303d8edd4e0afdfaa709b.dir
-      size: 1278051
-      nfiles: 151
+      md5: 048070b4dccc2e74f2977c62e56f9736.dir
+      size: 1373943
+      nfiles: 160
   geojson_upload:
-    cmd: rsync -au ../data/geojsons/ /media/AprioricsSlides//geojsons/AE1AE3/
+    cmd: rsync -au ../data/gt_geojsons/ 
+      /media/AprioricsSlides//gt_geojsons/AE1AE3/
     deps:
-    - path: ../data/geojsons
+    - path: ../data/gt_geojsons
       hash: md5
-      md5: 9fc1deff2084b37841fd9a149befd003.dir
-      size: 21925976053
-      nfiles: 152
+      md5: dcbf9ae9a99bb98c950c772465562879.dir
+      size: 20764456150
+      nfiles: 151
