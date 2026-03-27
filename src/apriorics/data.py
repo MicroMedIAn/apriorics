@@ -58,7 +58,7 @@ class SegmentationDataset(Dataset):
                 for k, patch in enumerate(reader):
                     if k % step == 0:
                         self.patches.append(Patch.from_csv_row(patch))
-                        self.n_pos.append(patch["n_pos"])
+                        self.n_pos.append(float(patch["n_pos"]))
                         self.slide_idxs.append(slide_idx)
 
         self.n_pos = np.array(self.n_pos, dtype=np.uint64)

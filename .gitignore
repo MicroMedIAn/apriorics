@@ -145,3 +145,5 @@ pathaia/
 data/
 .dvc_cache/
 __marimo__/
+
+.envrc

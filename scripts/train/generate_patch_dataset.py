@@ -161,7 +161,7 @@ if __name__ == "__main__":
                     mask = gpd.read_file(mask_path, engine="pyogrio", bbox=pol)[
                         "geometry"
                     ]
-                    n_pos = mask.area.sum()
+                    n_pos = int(mask.area.sum())
                 else:
                     n_pos = None
 

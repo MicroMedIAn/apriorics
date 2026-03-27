@@ -27,6 +27,8 @@ def get_loss(name: str) -> nn.Module:
         return FocalLoss("binary", alpha=0.25, gamme=2)
     elif split_name[0] == "dice":
         return DiceLoss("binary", smooth=1)
+    elif split_name[0] == "boundary":
+        return BoundaryLoss()
     elif split_name[0] == "sum":
         names = split_name[1::2]
         coefs = map(float, split_name[2::2])
@@ -55,6 +57,8 @@ def get_loss_name(loss: nn.Module) -> str:
         return "focal"
     elif isinstance(loss, DiceLoss):
         return "dice"
+    elif isinstance(loss, BoundaryLoss):
+        return "boundary"
     elif isinstance(loss, SumLosses):
         name = "sum"
         for n, loss_func in loss.named_children():

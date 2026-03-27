@@ -156,6 +156,9 @@ parser.add_argument(
 parser.add_argument(
     "--tissue_path", type=Path, help="Path to folder containing tissue mask geojsons."
 )
+parser.add_argument(
+    "--ink_path", type=Path, help="Path to folder containing ink mask geojsons."
+)
 
 
 def get_filefilter(slidefile):
@@ -471,6 +474,13 @@ def main(args):
             obj_polygons = unary_union(pols)
 
         gs = geopandas.GeoSeries(obj_polygons.geoms)
+        if args.ink_path is not None:
+            ink_gs = geopandas.read_file(
+                ink_path
+                / hefile.relative_to(slidefolder / "HE").with_suffix(".geojson")
+            )["geometry"]
+            gs = gs.loc[gs.disjoint(unary_union(ink_gs.values))]
+
         gs.to_file(geojsonfile)
         gs.to_file(maskpath)
 
