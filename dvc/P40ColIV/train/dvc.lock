@@ -1,0 +1,27 @@
+schema: '2.0'
+stages:
+  generate_patch_csvs:
+    cmd: python ../../../scripts/train/generate_patch_dataset.py --data_path 
+      ../data --ihc_type P40ColIV --mapping_file ../../../ihc_mapping.json 
+      --mask_extension .gpkg --remote_path /media/AprioricsSlides --seed 42 
+      --slide_extension .svs --split_file ../../../splits.csv --export_geojson 
+      --filter_pos 0 --level 0 --overlap 0.1 --overwrite --patch_size 256 
+      --slidefolder ../data/slides --maskfolder ../data/gt_gpkgs --outfolder 
+      ../data/train
+    deps:
+    - path: ../data/gt_gpkgs
+      hash: md5
+      md5: a4bea67c899e8fcff22b9f1dfe195335.dir
+      size: 1768775680
+      nfiles: 353
+    - path: ../data/slides
+      hash: md5
+      md5: d2461c92e13ee0254a6d85649bd71afc.dir
+      size: 615050602824
+      nfiles: 354
+    outs:
+    - path: ../data/train/256_0/patch_csvs
+      hash: md5
+      md5: b5ec41b175461a65b1cc9d96a5929fcc.dir
+      size: 3190647928
+      nfiles: 353

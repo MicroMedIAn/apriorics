@@ -39,14 +39,15 @@ slide_download:
   import_ihc: false
 train:
   batch_size: 32
-  epochs: 20
+  epochs: 5
   fold: 0
-  gpu: 0
+  gpu: 1
   level: 0
   loss: bce
   lr: 2e-4
-  model: unet/resnet50
+  model: manet/mit_b2
   num_workers: 32
   patch_size: 224
   scheduler: one-cycle
   wd: 0.01
+  p_pos: 0.7
