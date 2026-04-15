@@ -13,6 +13,7 @@ local:
   slide_path: slides_tmp
   mask_path: gt_gpkgs
   tissue_path: tissue_geojsons
+  ink_path: ink_geojsons
 mask_extraction:
   binary_op: closing
   dab_thr: 0.01

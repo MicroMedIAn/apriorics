@@ -307,8 +307,8 @@ def register_extract_mask(args, patch_gdf):
     print(f"[{pid}] Computing mask...")
 
     he = Image.open(base_path / "he.png")
-    he = np.asarray(he.convert("RGB").crop(box))
-    mask = get_mask_function(args.ihc_type)(he, np.asarray(ihc))
+    he = np.array(he.convert("RGB").crop(box))
+    mask = get_mask_function(args.ihc_type)(he, np.array(ihc))
     polygons = mask_to_polygons_layer(mask, 0, 0)
     x, y = patch_he.position
     moved_polygons = translate(polygons, x + crop, y + crop)
@@ -342,6 +342,8 @@ def main(args):
     geojsonfolder = args.data_path / args.geojson_path
     tmpfolder = args.data_path / args.tmp_path
     logfolder = args.data_path / args.log_path
+    if args.ink_path is not None:
+        inkfolder = args.data_path / args.ink_path
 
     if not maskfolder.exists():
         maskfolder.mkdir()
@@ -476,7 +478,7 @@ def main(args):
         gs = geopandas.GeoSeries(obj_polygons.geoms)
         if args.ink_path is not None:
             ink_gs = geopandas.read_file(
-                ink_path
+               inkfolder 
                 / hefile.relative_to(slidefolder / "HE").with_suffix(".geojson")
             )["geometry"]
             gs = gs.loc[gs.disjoint(unary_union(ink_gs.values))]

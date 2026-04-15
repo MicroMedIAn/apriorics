@@ -1,10 +1,12 @@
 schema: '2.0'
 stages:
   slide_download:
-    cmd: python ../../../scripts/utils/file_transfer.py --data_path ../data --ihc_type
-      CD3CD20 --mapping_file ../../../ihc_mapping.json --mask_extension .tif --remote_path
-      /media/AprioricsSlides --slide_extension .svs --add_tree --import_file ../../../file_lists/CD3CD20
-      --extension .svs --rel_path slides --remote_rel_path .
+    cmd: python ../../../scripts/utils/file_transfer.py --data_path ../data 
+      --ihc_type CD3CD20 --mapping_file ../../../ihc_mapping.json 
+      --mask_extension .tif --remote_path /media/AprioricsSlides 
+      --slide_extension .svs --add_tree --import_file 
+      ../../../file_lists/CD3CD20 --extension .svs --rel_path slides 
+      --remote_rel_path .
     outs:
     - path: ../data/slides
       hash: md5
@@ -12,35 +14,38 @@ stages:
       size: 269948462843
       nfiles: 157
   mask_extraction:
-    cmd: python ../../../scripts/mask_extraction/register_extract_polygons_masks_mp.py
-      --data_path ../data --ihc_type CD3CD20 --mapping_file ../../../ihc_mapping.json
-      --mask_extension .tif --remote_path /media/AprioricsSlides --slide_extension
-      .svs --binary_op closing --dab_thr 0.01 --nuc_max_size 24 --nuc_min_size 0 --num_workers
-      30 --object_min_size 100 --radius 5 --geojson_path geojsons --hovernet_path
-      hoverfast_gpkgs --log_path registration_geojsons --main_slide_path slides --slide_path
-      slides_tmp --mask_path masks --tissue_path tissue_geojsons
+    cmd: python 
+      ../../../scripts/mask_extraction/register_extract_polygons_masks_mp.py 
+      --data_path ../data --ihc_type CD3CD20 --mapping_file 
+      ../../../ihc_mapping.json --mask_extension .gpkg --remote_path 
+      /media/AprioricsSlides --slide_extension .svs --binary_op closing 
+      --dab_thr 0.01 --nuc_max_size 24 --nuc_min_size 0 --num_workers 30 
+      --object_min_size 100 --radius 5 --geojson_path gt_geojsons 
+      --hovernet_path hoverfast_gpkgs --log_path registration_geojsons 
+      --main_slide_path slides --slide_path slides_tmp --mask_path gt_gpkgs 
+      --tissue_path tissue_geojsons --ink_path ink_geojsons
     deps:
     - path: ../data/slides
       hash: md5
-      md5: c1297e19ba3df40d65d970216df48e75.dir
-      size: 479767631718
-      nfiles: 314
+      md5: 8122e9015c8e374390b1d3e61965cb38.dir
+      size: 766476313436
+      nfiles: 500
     outs:
-    - path: ../data/geojsons
+    - path: ../data/gt_geojsons
       hash: md5
-      md5: 7a99d4713fa33ea80bb044c7993ef141.dir
-      size: 5798799469
-      nfiles: 150
-    - path: ../data/masks
+      md5: f4dec8ec874ff578e421e848e547ac26.dir
+      size: 9100409187
+      nfiles: 254
+    - path: ../data/gt_gpkgs
       hash: md5
-      md5: 13287e11a7cbd234eb7e5a43c44657f7.dir
-      size: 101792895342
-      nfiles: 150
+      md5: 17fdf39435e90dcab943e8cd9e0d11d2.dir
+      size: 7781339136
+      nfiles: 254
     - path: ../data/registration_geojsons
       hash: md5
-      md5: fcc44aa463a04d851d90b4b84afed308.dir
-      size: 1106959
-      nfiles: 157
+      md5: 235e42600a589805af340c9dffe3965c.dir
+      size: 1752824
+      nfiles: 254
   geojson_upload:
     cmd: rsync -au ../data/geojsons /media/AprioricsSlides/geojsons/CD3CD20
     deps:
