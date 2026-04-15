@@ -8,6 +8,7 @@
         "ERGPodoplanine": 6,
         "INI1": 7,
         "P40ColIV": 8,
+        "COLIV": 8,
         "PHH3": 9
     },
     "IHC": {
@@ -19,6 +20,7 @@
         "ERGPodoplanine": 18,
         "INI1": 19,
         "P40ColIV": 20,
+        "ColIV": 20,
         "PHH3": 21
     }
 }
