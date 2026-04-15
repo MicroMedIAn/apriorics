@@ -15,7 +15,7 @@ evaluate:
 local:
   evaluate_path: evaluate
   geojson_path: gt_geojsons
-  hovernet_path: hovernet_gpkgs
+  hovernet_path: hoverfast_gpkgs 
   mask_path: gt_gpkgs
   reg_path: registration_geojsons
   slide_path: slides

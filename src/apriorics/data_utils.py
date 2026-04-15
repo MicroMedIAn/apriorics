@@ -26,6 +26,6 @@ def compute_dist(mask, resolution=None, dtype=None):
         negmask = ~posmask
         res[:] = (
             eucl_distance(negmask, sampling=resolution) * negmask
-            - (eucl_distance(posmask, resolution=resolution) - 1) * posmask
+            - (eucl_distance(posmask, sampling=resolution) - 1) * posmask
         )
     return res

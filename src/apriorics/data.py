@@ -86,7 +86,7 @@ class SegmentationDataset(Dataset):
         if self.return_dists:
             transformed["image"], transformed["mask"], compute_dist(transformed["mask"])
         else:
-            return transformed["image"], transformed["mask"]
+            return transformed["image"], transformed["mask"].to(dtype=torch.float32)
 
 
 class SparseSegmentationDataset(Dataset):

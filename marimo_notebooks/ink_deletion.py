@@ -1,6 +1,6 @@
 import marimo
 
-__generated_with = "0.18.4"
+__generated_with = "0.20.4"
 app = marimo.App()
 
 
@@ -28,6 +28,7 @@ def _():
     import json
     from datetime import datetime
     from pathlib import Path
+
     return (
         MultiPolygon,
         Path,
@@ -91,6 +92,7 @@ def _(binary_dilation, cv2, disk, np, remove_small_objects):
             flood_mask(img, mask, 15), footprint=disk(50)
         )
         return mask
+
     return (get_mask_ink,)
 
 
@@ -114,6 +116,7 @@ def _(box, gpd, slide_rois_no_image):
             ).any():
                 continue    
             yield patch
+
     return (get_patch_iter,)
 
 
@@ -146,6 +149,7 @@ def _(
         pols = scale(pols, dsr, dsr, origin=(0, 0, 0))
         pols = MultiPolygon([Polygon(pol.exterior) for pol in pols.geoms])
         return pols
+
     return get_full_mask_ink, pool_init_func
 
 
@@ -186,6 +190,7 @@ def _(
         all_pols = [pols for pols in all_pols if pols is not None]
         all_pols = unary_union(all_pols)
         gpd.GeoSeries(all_pols).to_file(out_path)
+
     return (get_slide_ink_mask,)
 
 

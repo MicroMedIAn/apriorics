@@ -61,7 +61,7 @@ def get_tissue_mask(img_G: NDByteGrayImage, blacktol: int = 0, whitetol: int = 2
     return (img_G > blacktol) & (img_G < whitetol)
 
 
-def get_tissue_mask_hsv(img, stol: int = 0.35, vtol: int = 0.35):
+def get_tissue_mask_hsv(img, stol: float = 0.35, vtol: float = 0.35):
     r"""
     Get basic tissue mask from grayscale image.
 

@@ -25,3 +25,129 @@ stages:
       md5: b5ec41b175461a65b1cc9d96a5929fcc.dir
       size: 3190647928
       nfiles: 353
+  train:
+    cmd: python ../../../scripts/train/train_segmentation.py --hash_file 
+      .model_hash.yaml --data_path ../data --ihc_type P40ColIV --mapping_file 
+      ../../../ihc_mapping.json --mask_extension .gpkg --remote_path 
+      /media/AprioricsSlides --seed 42 --slide_extension .svs --split_file 
+      ../../../splits.csv --batch_size 32 --epochs 5 --fold 0 --gpu 1 --level 0 
+      --loss bce --lr 0.0002 --model manet/mit_b2 --num_workers 32 --patch_size 
+      224 --scheduler one-cycle --wd 0.01 --p_pos 0.7 --base_size 256 
+      --slidefolder ../data/slides --maskfolder ../data/gt_gpkgs --trainfolder 
+      ../data/train
+    deps:
+    - path: ../data/train/256_0/patch_csvs
+      hash: md5
+      md5: b5ec41b175461a65b1cc9d96a5929fcc.dir
+      size: 3190647928
+      nfiles: 353
+    outs:
+    - path: ../data/train/logs/apriorics
+      hash: md5
+      md5: 19a1077a40223bc958ee44d8c9e90a6a.dir
+      size: 4202089958
+      nfiles: 10
+    - path: .model_hash.yaml
+      hash: md5
+      md5: a38fe5c4b830a9e263afa1d3ea60dcdd
+      size: 38
+  generate_patch_csvs_eval:
+    cmd: python ../../../scripts/train/generate_patch_dataset.py --data_path 
+      ../data --ihc_type P40ColIV --mapping_file ../../../ihc_mapping.json 
+      --mask_extension .gpkg --remote_path /media/AprioricsSlides --seed 42 
+      --slide_extension .svs --split_file ../../../splits.csv --level 0 
+      --overlap 0.1 --overwrite true --export_geojson true --patch_size 224 
+      --slidefolder ../data/slides --maskfolder ../data/gt_gpkgs --outfolder 
+      ../data/train --regfolder ../data/registration_geojsons
+    deps:
+    - path: ../data/gt_gpkgs
+      hash: md5
+      md5: a4bea67c899e8fcff22b9f1dfe195335.dir
+      size: 1768775680
+      nfiles: 353
+    - path: ../data/slides
+      hash: md5
+      md5: d2461c92e13ee0254a6d85649bd71afc.dir
+      size: 615050602824
+      nfiles: 354
+    outs:
+    - path: ../data/train/224_0/patch_csvs
+      hash: md5
+      md5: 086265608e3adde8ede6bd2b01933784.dir
+      size: 3041467640
+      nfiles: 353
+  evaluate:
+    cmd: python ../../../scripts/train/predict_export_geojsons.py --hash_file 
+      .model_hash.yaml --outfolder ../data/evaluate --slidefolder ../data/slides
+      --maskfolder ../data/gt_gpkgs --trainfolder ../data/train --data_path 
+      ../data --ihc_type P40ColIV --mapping_file ../../../ihc_mapping.json 
+      --mask_extension .gpkg --remote_path /media/AprioricsSlides --seed 42 
+      --slide_extension .svs --split_file ../../../splits.csv --batch_size 32 
+      --epochs 5 --fold 0 --gpu 1 --level 0 --loss bce --lr 0.0002 --model 
+      manet/mit_b2 --num_workers 32 --patch_size 224 --scheduler one-cycle --wd 
+      0.01 --p_pos 0.7 --area_threshold 100 --iou_threshold 0.5 --test_fold test
+    deps:
+    - path: ../data/train/224_0/patch_csvs
+      hash: md5
+      md5: 086265608e3adde8ede6bd2b01933784.dir
+      size: 3041467640
+      nfiles: 353
+    - path: ../data/train/logs/apriorics
+      hash: md5
+      md5: 19a1077a40223bc958ee44d8c9e90a6a.dir
+      size: 4202089958
+      nfiles: 10
+    - path: .model_hash.yaml
+      hash: md5
+      md5: a38fe5c4b830a9e263afa1d3ea60dcdd
+      size: 38
+    outs:
+    - path: ../data/evaluate/
+      hash: md5
+      md5: 39039bc9b980d13ca8fda63c58853330.dir
+      size: 1362574704
+      nfiles: 257
+  get_fp_fn_geojsons:
+    cmd: python ../../../scripts/train/get_fp_fn_geojsons.py --hash_file 
+      .model_hash.yaml --done_file .fp_fn_done.yaml --evalfolder 
+      ../data/evaluate --gtfolder ../data/gt_geojsons --hovernetfolder 
+      ../data/hoverfast_gpkgs --trainfolder ../data/train --regfolder 
+      ../data/registration_geojsons --data_path ../data --ihc_type P40ColIV 
+      --mapping_file ../../../ihc_mapping.json --mask_extension .gpkg 
+      --remote_path /media/AprioricsSlides --seed 42 --slide_extension .svs 
+      --split_file ../../../splits.csv --batch_size 32 --epochs 5 --fold 0 --gpu
+      1 --level 0 --loss bce --lr 0.0002 --model manet/mit_b2 --num_workers 32 
+      --patch_size 224 --scheduler one-cycle --wd 0.01 --p_pos 0.7 
+      --area_threshold 100 --iou_threshold 0.5 --test_fold test
+    deps:
+    - path: ../data/evaluate/
+      hash: md5
+      md5: d4072bcaad745c69bbf90f865b9cb1da.dir
+      size: 3231510200
+      nfiles: 770
+    - path: ../data/registration_geojsons
+      hash: md5
+      md5: 116b9d6e9b94914694bd7abf72a8d8ae.dir
+      size: 1748781
+      nfiles: 354
+    - path: ../data/train/224_0/patch_geojsons
+      hash: md5
+      md5: e3d20cd16b533f70bb0c9ffaa418b9c7.dir
+      size: 380781041
+      nfiles: 353
+    - path: .model_hash.yaml
+      hash: md5
+      md5: a38fe5c4b830a9e263afa1d3ea60dcdd
+      size: 38
+    outs:
+    - path: .fp_fn_done.yaml
+      hash: md5
+      md5: a38fe5c4b830a9e263afa1d3ea60dcdd
+      size: 38
+  evaluate_upload:
+    cmd: rsync -avu ../data/evaluate/ /media/AprioricsSlides/evaluate/P40ColIV
+    deps:
+    - path: .fp_fn_done.yaml
+      hash: md5
+      md5: a38fe5c4b830a9e263afa1d3ea60dcdd
+      size: 38
