@@ -138,20 +138,18 @@ def get_dab_mask(
 
 def flood_mask(img, mask, n=40):
     ii, jj = np.nonzero(mask)
-    out = np.zeros((img.shape[0] + 2, img.shape[1] + 2), dtype=bool)
+    out = np.zeros((img.shape[0] + 2, img.shape[1] + 2), dtype=np.uint8)
     for i, j in zip(ii, jj):
-        m = np.zeros((img.shape[0] + 2, img.shape[1] + 2), dtype=np.uint8)
-        _, _, m, _ = cv2.floodFill(
+        cv2.floodFill(
             img,
-            m,
+            out,
             (j, i),
             newVal=(0, 0, 0),
             loDiff=(n, n, n),
             upDiff=(n, n, n),
             flags=4 | cv2.FLOODFILL_FIXED_RANGE | cv2.FLOODFILL_MASK_ONLY,
         )
-        out |= m > 0
-    return out[1:-1, 1:-1]
+    return out[1:-1, 1:-1] > 0
 
 
 def flood_full_mask(img, mask, n=40, area_threshold=50):
@@ -446,6 +444,41 @@ def get_mask_P40ColIV(
 
     mask = remove_small_objects(mask_ihc & ~mask_he_DAB & ~mask_ihc_r, min_size=50)
 
+    return mask
+
+
+def get_mask_ColIV(he: Union[Image, NDImage], ihc: Union[Image, NDImage]) -> NDBoolMask:
+    r"""
+    Compute mask on paired PHH3 immunohistochemistry and H&E images.
+
+    Args:
+        he: input H&E image. Mask is computed using a threshold on H channel.
+        ihc: input immunohistochemistry image. Mask is computed using a threshold on
+            DAB channel.
+
+    Returns:
+        Intersection of H&E and IHC masks.
+    """
+    ihc_h = rgb2hsv(ihc)
+    ihc_s = ihc_h[:, :, 1]
+    ihc_v = ihc_h[:, :, 2]
+    ihc_h = ihc_h[:, :, 0]
+    mask = remove_small_holes(
+        remove_small_objects(
+            flood_mask(
+                ihc,
+                remove_small_objects(
+                    ((ihc_h < 5 / 360) | (ihc_h > 230 / 360))
+                    & (ihc_s > 0.3)
+                    & (ihc_v > 0.4),
+                    min_size=200,
+                ),
+                n=5,
+            ),
+            min_size=200,
+        ),
+        area_threshold=200,
+    )
     return mask
 
 
