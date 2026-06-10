@@ -7,6 +7,7 @@ from albumentations import CropNonEmptyMaskIfExists
 from albumentations.core.transforms_interface import DualTransform
 from pathaia.util.types import NDGrayImage, NDImage
 from skimage.morphology import label, remove_small_holes, remove_small_objects
+from torchvision.transforms import Normalize
 from torchvision.transforms.functional import to_tensor
 
 
@@ -246,3 +247,19 @@ class CorrectCompression(DualTransform):
 
     def get_transform_init_args_names(self):
         return ("min_size", "area_threshold")
+
+
+class NormalizeInverse(Normalize):
+    """
+    Undoes the normalization and returns the reconstructed images in the input domain.
+    """
+
+    def __init__(self, mean, std):
+        mean = torch.as_tensor(mean)
+        std = torch.as_tensor(std)
+        std_inv = 1 / (std + 1e-7)
+        mean_inv = -mean * std_inv
+        super().__init__(mean=mean_inv, std=std_inv)
+
+    def __call__(self, tensor):
+        return super().__call__(tensor.clone())

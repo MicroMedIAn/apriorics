@@ -15,6 +15,7 @@ from shapely.affinity import translate
 from shapely.geometry import MultiPolygon, Polygon
 from shapely.ops import unary_union
 from skimage.morphology import remove_small_holes
+from timm.layers import SwiGLUPacked
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 
@@ -192,11 +193,20 @@ if __name__ == "__main__":
     device = torch.device(f"cuda:{args.gpu}")
     model = args.model.split("/")
     if len(model) > 1:
-        encoder_name = model[1]
+        encoder_name = "/".join(model[1:])
     else:
         encoder_name = None
-    kwargs = {
-        "encoder_weights": "imagenet",
+
+    if encoder_name is not None and "Virchow2" in encoder_name:
+        kwargs = {
+            "encoder_weights": "virchow_v2",
+            "mlp_layer": SwiGLUPacked,
+            "act_layer": torch.nn.SiLU,
+            "output_size": args.patch_size,
+        }
+    else:
+        kwargs = {"encoder_weights": "imagenet"}
+    kwargs |= {
         "classes": 1,
         # "norm_layer": group_norm if args.group_norm else torch.nn.BatchNorm2d,
     }

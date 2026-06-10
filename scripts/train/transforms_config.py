@@ -52,7 +52,7 @@ def get_transforms(name, crop_size):
                 ],
                 p=0.75,
             ),
-            HueSaturationValue(hue_shift_limit=8, sat_shift_limit=20, p=1),
+            HueSaturationValue(hue_shift_limit=30, sat_shift_limit=20, p=1),
             RandomBrightnessContrast(brightness_limit=0.15, contrast_limit=0.2, p=1),
             ToTensor(),
         ],

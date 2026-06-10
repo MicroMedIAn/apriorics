@@ -183,22 +183,33 @@ if __name__ == "__main__":
     )
 
     model = args.model.split("/")
-    if model[0] == "unet":
-        encoder_name = model[1]
+    if len(model) > 1:
+        encoder_name = "/".join(model[1:])
     else:
         encoder_name = None
 
-    device = torch.device(f"cuda:{args.gpu}")
-    model = create_model(
-        model[0],
-        encoder_name=encoder_name,
-        pretrained=True,
-        img_size=args.patch_size,
-        num_classes=1,
-        norm_layer=group_norm if args.group_norm else torch.nn.BatchNorm2d,
-    ).eval()
+    if encoder_name is not None and "Virchow2" in encoder_name:
+        kwargs = {
+            "encoder_weights": "virchow_v2",
+            "mlp_layer": SwiGLUPacked,
+            "act_layer": torch.nn.SiLU,
+            "output_size": args.patch_size,
+        }
+    else:
+        kwargs = {"encoder_weights": "imagenet"}
+    kwargs |= {
+        "classes": 1,
+        # "norm_layer": group_norm if args.group_norm else torch.nn.BatchNorm2d,
+    }
+    if "classification" not in args.data_type:
+        kwargs |= {
+            "encoder_name": encoder_name,
+            "img_size": args.patch_size,
+        }
+    model = create_model(model[0], **kwargs).eval()
     model.requires_grad_(False)
 
+    device = torch.device(f"cuda:{args.gpu}")
     model = BasicSegmentationModule(
         model,
         loss=None,

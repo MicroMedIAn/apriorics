@@ -14,6 +14,7 @@ from pathaia.util.paths import get_files
 from pytorch_lightning.callbacks import ModelCheckpoint
 from pytorch_lightning.loggers import CometLogger
 from segmentation_models_pytorch import create_model
+from timm.layers import SwiGLUPacked
 from torch.utils.data import DataLoader
 from transforms_config import get_transforms
 
@@ -317,11 +318,20 @@ if __name__ == "__main__":
 
     model = args.model.split("/")
     if len(model) > 1:
-        encoder_name = model[1]
+        encoder_name = "/".join(model[1:])
     else:
         encoder_name = None
-    kwargs = {
-        "encoder_weights": "imagenet",
+
+    if encoder_name is not None and "Virchow2" in encoder_name:
+        kwargs = {
+            "encoder_weights": "virchow_v2",
+            "mlp_layer": SwiGLUPacked,
+            "act_layer": torch.nn.SiLU,
+            "output_size": args.patch_size,
+        }
+    else:
+        kwargs = {"encoder_weights": "imagenet"}
+    kwargs |= {
         "classes": 1,
         # "norm_layer": group_norm if args.group_norm else torch.nn.BatchNorm2d,
     }

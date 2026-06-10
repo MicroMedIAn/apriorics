@@ -20,6 +20,7 @@ from torchvision.utils import draw_bounding_boxes, draw_segmentation_masks, make
 
 from apriorics.metrics import MetricCollection, PredictionHist
 from apriorics.model_components.utils import named_leaf_modules
+from apriorics.transforms import NormalizeInverse
 
 
 def get_scheduler_func(
@@ -100,11 +101,17 @@ class BasicSegmentationModule(pl.LightningModule):
         self.scheduler_func = scheduler_func
         self.metrics = MetricCollection(ifnone(metrics, []))
         self.stain_augmentor = stain_augmentor
+        # self.register_buffer(
+        #     "mean", torch.tensor([0.867, 0.785, 0.828]).view(1, -1, 1, 1)
+        # )
+        # self.register_buffer(
+        #     "std", torch.tensor([0.116, 0.142, 0.113]).view(1, -1, 1, 1)
+        # )
         self.register_buffer(
-            "mean", torch.tensor([0.867, 0.785, 0.828]).view(1, -1, 1, 1)
+            "mean", torch.tensor([0.485, 0.456, 0.406]).view(1, -1, 1, 1)
         )
         self.register_buffer(
-            "std", torch.tensor([0.116, 0.142, 0.113]).view(1, -1, 1, 1)
+            "std", torch.tensor([0.229, 0.224, 0.225]).view(1, -1, 1, 1)
         )
 
     def forward(self, x: Tensor) -> Tensor:
