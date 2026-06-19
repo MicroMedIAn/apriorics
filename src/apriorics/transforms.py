@@ -65,7 +65,7 @@ class ToTensor(DualTransform):
         return {"image": self.apply, "mask": self.apply_to_mask}
 
     def apply(self, img: NDImage, **params) -> torch.Tensor:
-        return to_tensor(img)
+        return to_tensor(np.array(img, copy=True))
 
     def apply_to_mask(self, mask: NDImage, **params) -> torch.Tensor:
         if self.transpose_mask and mask.ndim == 3:

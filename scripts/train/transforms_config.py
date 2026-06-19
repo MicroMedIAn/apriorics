@@ -40,8 +40,8 @@ def get_transforms(name, crop_size):
             OneOf([HorizontalFlip(), VerticalFlip()], p=0.75),
             OneOf(
                 [
-                    GaussianBlur(blur_limit=(1, 7), p=1),
-                    MedianBlur(blur_limit=7, p=1),
+                    GaussianBlur(blur_range=(1, 7), p=1),
+                    MedianBlur(p=1),
                     OneOf(
                         [
                             GaussNoise(std_range=(0, 0.05), p=1),
@@ -52,8 +52,8 @@ def get_transforms(name, crop_size):
                 ],
                 p=0.75,
             ),
-            HueSaturationValue(hue_shift_limit=30, sat_shift_limit=20, p=1),
-            RandomBrightnessContrast(brightness_limit=0.15, contrast_limit=0.2, p=1),
+            HueSaturationValue(hue_shift_range=(-30, 30), sat_shift_range=(-20, 20), p=1),
+            RandomBrightnessContrast(brightness_range=(-0.15, 0.15), contrast_range=(-0.2, 0.2), p=1),
             ToTensor(),
         ],
     }

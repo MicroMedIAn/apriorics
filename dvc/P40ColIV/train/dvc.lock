@@ -45,12 +45,12 @@ stages:
     outs:
     - path: ../data/train/logs/apriorics
       hash: md5
-      md5: 0084a734e775bbef30938a383179ecab.dir
-      size: 28750624224
-      nfiles: 18
+      md5: 36e10af3ee204f448556fed2061e24fe.dir
+      size: 59436291468
+      nfiles: 28
     - path: .model_hash.yaml
       hash: md5
-      md5: a8313209523a0a03242bad105ca3b7b4
+      md5: d6e41f62f494b40aa9d6dde4b16673c0
       size: 38
   generate_patch_csvs_eval:
     cmd: python ../../../scripts/train/generate_patch_dataset.py --data_path 
@@ -97,19 +97,19 @@ stages:
       nfiles: 353
     - path: ../data/train/logs/apriorics
       hash: md5
-      md5: 0084a734e775bbef30938a383179ecab.dir
-      size: 28750624224
-      nfiles: 18
+      md5: 36e10af3ee204f448556fed2061e24fe.dir
+      size: 59436291468
+      nfiles: 28
     - path: .model_hash.yaml
       hash: md5
-      md5: a8313209523a0a03242bad105ca3b7b4
+      md5: d6e41f62f494b40aa9d6dde4b16673c0
       size: 38
     outs:
     - path: ../data/evaluate/
       hash: md5
-      md5: 16e8bb3a706abd81174414f935a339c2.dir
-      size: 5353616024
-      nfiles: 1027
+      md5: 0284947f2f19a86010b8d1fb60fd6389.dir
+      size: 8319055249
+      nfiles: 1578
   get_fp_fn_geojsons:
     cmd: python ../../../scripts/train/get_fp_fn_geojsons.py --hash_file 
       .model_hash.yaml --done_file .fp_fn_done.yaml --evalfolder 

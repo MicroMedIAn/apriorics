@@ -69,14 +69,20 @@ class SegmentationDataset(Dataset):
         return len(self.patches)
 
     def __getitem__(
-        self, idx: int
-    ) -> Tuple[Union[np.ndarray, torch.Tensor], Union[np.ndarray, torch.Tensor]]:
-        patch = self.patches[idx]
-        slide_idx = self.slide_idxs[idx]
+        self, index: int
+    ) -> Union[
+        Tuple[Union[np.ndarray, torch.Tensor], Union[np.ndarray, torch.Tensor]],
+        Tuple[
+            Union[np.ndarray, torch.Tensor], Union[np.ndarray, torch.Tensor], np.ndarray
+        ],
+    ]:
+        patch = self.patches[index]
+        slide_idx = self.slide_idxs[index]
         slide = self.slides[slide_idx]
 
         slide_region = np.array(
-            slide.read_region(patch.position, patch.level, patch.size).convert("RGB")
+            slide.read_region(patch.position, patch.level, patch.size).convert("RGB"),
+            copy=True,
         )
         mask_region = read_mask_from_gpkg(
             self.mask_paths[slide_idx], patch, slide.level_downsamples[patch.level]
@@ -84,7 +90,11 @@ class SegmentationDataset(Dataset):
 
         transformed = self.transforms(image=slide_region, mask=mask_region)
         if self.return_dists:
-            transformed["image"], transformed["mask"], compute_dist(transformed["mask"])
+            return (
+                transformed["image"],
+                transformed["mask"],
+                compute_dist(transformed["mask"]),
+            )
         else:
             return transformed["image"], transformed["mask"].to(dtype=torch.float32)
 

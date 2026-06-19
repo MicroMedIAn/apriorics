@@ -393,7 +393,7 @@ if __name__ == "__main__":
         min_epochs=args.epochs,
         max_epochs=args.epochs,
         logger=logger,
-        precision=16,
+        precision="16-mixed",
         callbacks=[ckpt_callback],
         num_sanity_val_steps=0,
         gradient_clip_val=args.grad_clip,
