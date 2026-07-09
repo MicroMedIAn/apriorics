@@ -39,7 +39,7 @@ slide_download:
     import_ihc: false
 train:
     batch_size: 32
-    epochs: 5
+    epochs: 1
     fold: 0
     gpu: 1
     level: 0
@@ -53,4 +53,4 @@ train:
     p_pos: 0.8
     transforms: "hovernet"
     augment_stain: false
-    freeze_encoder: true
+    freeze_encoder: false

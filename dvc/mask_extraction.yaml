@@ -1,35 +1,34 @@
 stages:
-  slide_download:
-    cmd: >-
-      python ../../../scripts/utils/file_transfer.py
-      ${base}
-      ${slide_download}
-      --extension ${base.slide_extension}
-      --rel_path ${local.main_slide_path}
-      --remote_rel_path ${remote.slide_path}
-    outs:
-      - ${base.data_path}/${local.main_slide_path}:
-          persist: true
-          cache: false
+    slide_download:
+        cmd: >-
+            python ../../../scripts/utils/file_transfer.py
+            ${base}
+            ${slide_download}
+            --extension ${base.slide_extension}
+            --rel_path ${local.main_slide_path}
+            --remote_rel_path ${remote.slide_path}
+        outs:
+            - ${base.data_path}/${local.main_slide_path}:
+                  persist: true
 
-  mask_extraction:
-    cmd: >-
-      python ../../../scripts/mask_extraction/register_extract_polygons_masks_mp.py
-      ${base}
-      ${mask_extraction}
-      ${local}
-    deps:
-      - ${base.data_path}/${local.main_slide_path}
-    outs:
-      - ${base.data_path}/${local.mask_path}:
-          persist: true
-      - ${base.data_path}/${local.geojson_path}:
-          persist: true
-      - ${base.data_path}/${local.log_path}:
-          persist: true
+    mask_extraction:
+        cmd: >-
+            python ../../../scripts/mask_extraction/register_extract_polygons_masks_mp.py
+            ${base}
+            ${mask_extraction}
+            ${local}
+        deps:
+            - ${base.data_path}/${local.main_slide_path}
+        outs:
+            - ${base.data_path}/${local.mask_path}:
+                  persist: true
+            - ${base.data_path}/${local.geojson_path}:
+                  persist: true
+            - ${base.data_path}/${local.log_path}:
+                  persist: true
 
-  geojson_upload:
-    cmd: >-
-      rsync -au ${base.data_path}/${local.geojson_path}/ ${base.remote_path}/${remote.geojson_path}/${base.ihc_type}/
-    deps:
-      - ${base.data_path}/${local.geojson_path}
+    geojson_upload:
+        cmd: >-
+            rsync -au ${base.data_path}/${local.geojson_path}/ ${base.remote_path}/${remote.geojson_path}/${base.ihc_type}/
+        deps:
+            - ${base.data_path}/${local.geojson_path}

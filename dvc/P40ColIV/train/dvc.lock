@@ -1,18 +1,18 @@
 schema: '2.0'
 stages:
   generate_patch_csvs:
-    cmd: python ../../../scripts/train/generate_patch_dataset.py --data_path 
-      ../data --ihc_type P40ColIV --mapping_file ../../../ihc_mapping.json 
-      --mask_extension .gpkg --remote_path /media/AprioricsSlides --seed 42 
-      --slide_extension .svs --split_file ../../../splits.csv --export_geojson 
-      --filter_pos 0 --level 0 --overlap 0.1 --overwrite --patch_size 256 
-      --slidefolder ../data/slides --maskfolder ../data/gt_gpkgs --outfolder 
+    cmd: python ../../../scripts/train/generate_patch_dataset.py --data_path
+      ../data --ihc_type P40ColIV --mapping_file ../../../ihc_mapping.json
+      --mask_extension .gpkg --remote_path /media/AprioricsSlides --seed 42
+      --slide_extension .svs --split_file ../../../splits.csv --export_geojson
+      --filter_pos 0 --level 0 --overlap 0.1 --overwrite --patch_size 256
+      --slidefolder ../data/slides --maskfolder ../data/gt_gpkgs --outfolder
       ../data/train
     deps:
     - path: ../data/gt_gpkgs
       hash: md5
-      md5: a4bea67c899e8fcff22b9f1dfe195335.dir
-      size: 1768775680
+      md5: 7f64b5316ad510a7203ad098bed5e7a5.dir
+      size: 1627521024
       nfiles: 353
     - path: ../data/slides
       hash: md5
@@ -26,14 +26,14 @@ stages:
       size: 3190647928
       nfiles: 353
   train:
-    cmd: python ../../../scripts/train/train_segmentation.py --hash_file 
-      .model_hash.yaml --data_path ../data --ihc_type P40ColIV --mapping_file 
-      ../../../ihc_mapping.json --mask_extension .gpkg --remote_path 
-      /media/AprioricsSlides --seed 42 --slide_extension .svs --split_file 
-      ../../../splits.csv --batch_size 32 --epochs 5 --fold 0 --gpu 1 --level 0 
-      --loss sum_bce_0.5_dice_0.5 --lr 0.0001 --model 
-      dpt/tu-hf-hub:paige-ai/Virchow2 --num_workers 32 --patch_size 224 
-      --scheduler one-cycle --wd 0.01 --p_pos 0.8 --transforms hovernet 
+    cmd: python ../../../scripts/train/train_segmentation.py --hash_file
+      .model_hash.yaml --data_path ../data --ihc_type P40ColIV --mapping_file
+      ../../../ihc_mapping.json --mask_extension .gpkg --remote_path
+      /media/AprioricsSlides --seed 42 --slide_extension .svs --split_file
+      ../../../splits.csv --batch_size 32 --epochs 5 --fold 0 --gpu 1 --level 0
+      --loss sum_bce_0.5_dice_0.5 --lr 0.0001 --model
+      dpt/tu-hf-hub:paige-ai/Virchow2 --num_workers 32 --patch_size 224
+      --scheduler one-cycle --wd 0.01 --p_pos 0.8 --transforms hovernet
       --freeze_encoder --base_size 256 --slidefolder ../data/slides --maskfolder
       ../data/gt_gpkgs --trainfolder ../data/train
     deps:
@@ -53,12 +53,12 @@ stages:
       md5: d6e41f62f494b40aa9d6dde4b16673c0
       size: 38
   generate_patch_csvs_eval:
-    cmd: python ../../../scripts/train/generate_patch_dataset.py --data_path 
-      ../data --ihc_type P40ColIV --mapping_file ../../../ihc_mapping.json 
-      --mask_extension .gpkg --remote_path /media/AprioricsSlides --seed 42 
-      --slide_extension .svs --split_file ../../../splits.csv --level 0 
-      --overlap 0.1 --overwrite true --export_geojson true --patch_size 224 
-      --slidefolder ../data/slides --maskfolder ../data/gt_gpkgs --outfolder 
+    cmd: python ../../../scripts/train/generate_patch_dataset.py --data_path
+      ../data --ihc_type P40ColIV --mapping_file ../../../ihc_mapping.json
+      --mask_extension .gpkg --remote_path /media/AprioricsSlides --seed 42
+      --slide_extension .svs --split_file ../../../splits.csv --level 0
+      --overlap 0.1 --overwrite true --export_geojson true --patch_size 224
+      --slidefolder ../data/slides --maskfolder ../data/gt_gpkgs --outfolder
       ../data/train --regfolder ../data/registration_geojsons
     deps:
     - path: ../data/gt_gpkgs
@@ -78,16 +78,16 @@ stages:
       size: 3041467640
       nfiles: 353
   evaluate:
-    cmd: python ../../../scripts/train/predict_export_geojsons.py --hash_file 
+    cmd: python ../../../scripts/train/predict_export_geojsons.py --hash_file
       .model_hash.yaml --outfolder ../data/evaluate --slidefolder ../data/slides
-      --maskfolder ../data/gt_gpkgs --trainfolder ../data/train --data_path 
-      ../data --ihc_type P40ColIV --mapping_file ../../../ihc_mapping.json 
-      --mask_extension .gpkg --remote_path /media/AprioricsSlides --seed 42 
-      --slide_extension .svs --split_file ../../../splits.csv --batch_size 32 
-      --epochs 5 --fold 0 --gpu 1 --level 0 --loss sum_bce_0.5_dice_0.5 --lr 
-      0.0001 --model dpt/tu-hf-hub:paige-ai/Virchow2 --num_workers 32 
-      --patch_size 224 --scheduler one-cycle --wd 0.01 --p_pos 0.8 --transforms 
-      hovernet --freeze_encoder --area_threshold 100 --iou_threshold 0.5 
+      --maskfolder ../data/gt_gpkgs --trainfolder ../data/train --data_path
+      ../data --ihc_type P40ColIV --mapping_file ../../../ihc_mapping.json
+      --mask_extension .gpkg --remote_path /media/AprioricsSlides --seed 42
+      --slide_extension .svs --split_file ../../../splits.csv --batch_size 32
+      --epochs 5 --fold 0 --gpu 1 --level 0 --loss sum_bce_0.5_dice_0.5 --lr
+      0.0001 --model dpt/tu-hf-hub:paige-ai/Virchow2 --num_workers 32
+      --patch_size 224 --scheduler one-cycle --wd 0.01 --p_pos 0.8 --transforms
+      hovernet --freeze_encoder --area_threshold 100 --iou_threshold 0.5
       --test_fold test
     deps:
     - path: ../data/train/224_0/patch_csvs
@@ -111,17 +111,17 @@ stages:
       size: 8319055249
       nfiles: 1578
   get_fp_fn_geojsons:
-    cmd: python ../../../scripts/train/get_fp_fn_geojsons.py --hash_file 
-      .model_hash.yaml --done_file .fp_fn_done.yaml --evalfolder 
-      ../data/evaluate --gtfolder ../data/gt_geojsons --hovernetfolder 
-      ../data/hoverfast_gpkgs --trainfolder ../data/train --regfolder 
-      ../data/registration_geojsons --data_path ../data --ihc_type P40ColIV 
-      --mapping_file ../../../ihc_mapping.json --mask_extension .gpkg 
-      --remote_path /media/AprioricsSlides --seed 42 --slide_extension .svs 
+    cmd: python ../../../scripts/train/get_fp_fn_geojsons.py --hash_file
+      .model_hash.yaml --done_file .fp_fn_done.yaml --evalfolder
+      ../data/evaluate --gtfolder ../data/gt_geojsons --hovernetfolder
+      ../data/hoverfast_gpkgs --trainfolder ../data/train --regfolder
+      ../data/registration_geojsons --data_path ../data --ihc_type P40ColIV
+      --mapping_file ../../../ihc_mapping.json --mask_extension .gpkg
+      --remote_path /media/AprioricsSlides --seed 42 --slide_extension .svs
       --split_file ../../../splits.csv --batch_size 32 --epochs 5 --fold 0 --gpu
-      1 --level 0 --loss sum_bce_0.5_dice_0.5 --lr 0.0001 --model 
-      dpt/tu-hf-hub:paige-ai/Virchow2 --num_workers 32 --patch_size 224 
-      --scheduler one-cycle --wd 0.01 --p_pos 0.8 --transforms hovernet 
+      1 --level 0 --loss sum_bce_0.5_dice_0.5 --lr 0.0001 --model
+      dpt/tu-hf-hub:paige-ai/Virchow2 --num_workers 32 --patch_size 224
+      --scheduler one-cycle --wd 0.01 --p_pos 0.8 --transforms hovernet
       --freeze_encoder --area_threshold 100 --iou_threshold 0.5 --test_fold test
     deps:
     - path: ../data/evaluate/

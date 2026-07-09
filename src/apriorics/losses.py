@@ -24,7 +24,7 @@ def get_loss(name: str) -> nn.Module:
     if split_name[0] == "bce":
         return nn.BCEWithLogitsLoss()
     elif split_name[0] == "focal":
-        return FocalLoss("binary", alpha=0.25, gamme=2)
+        return FocalLoss("binary", alpha=0.25, gamma=2)
     elif split_name[0] == "dice":
         return DiceLoss("binary", smooth=1)
     elif split_name[0] == "boundary":
@@ -34,6 +34,9 @@ def get_loss(name: str) -> nn.Module:
         coefs = map(float, split_name[2::2])
         losses_with_coefs = [(get_loss(n), c) for n, c in zip(names, coefs)]
         return SumLosses(*losses_with_coefs)
+    elif split_name[0] == "wbce":
+        pos_weight = torch.tensor(float(split_name[1]), dtype=torch.float32)
+        return nn.BCEWithLogitsLoss(pos_weight=pos_weight)
     else:
         raise ValueError(f"{name} not recognized as a loss function")
 

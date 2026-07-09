@@ -380,6 +380,8 @@ class BalancedRandomSampler(RandomSampler):
             n_pos = (self.data_source.n_pos > 0).sum()
             if n_pos == len(self.data_source):
                 return num_samples
+            elif self.p_pos == 1:
+                return n_pos
             else:
                 max_avail = min(
                     int(n_pos / self.p_pos),
@@ -389,6 +391,9 @@ class BalancedRandomSampler(RandomSampler):
 
     def get_idxs(self) -> List[int]:
         mask = self.data_source.n_pos == 0
+        if self.p_pos == 1:
+            idxs = (~mask).nonzero()[0].tolist()
+            return np.random.permutation(idxs)
         avail = [mask.nonzero()[0].tolist(), (~mask).nonzero()[0].tolist()]
         avail = [cl_patches for cl_patches in avail if cl_patches]
         idxs = []

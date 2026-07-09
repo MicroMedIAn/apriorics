@@ -361,7 +361,7 @@ if __name__ == "__main__":
         dl_lengths=(len(train_dl), len(val_dl)),
     )
 
-    if args.freeze_encoder:
+    if args.freeze_encoder or "Virchow2" in encoder_name:
         plmodule.freeze_encoder()
 
     logger = CometLogger(
