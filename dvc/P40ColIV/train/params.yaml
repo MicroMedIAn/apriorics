@@ -12,6 +12,7 @@ evaluate:
     flood_mask: false
     iou_threshold: 0.5
     test_fold: test
+    version: null
 local:
     evaluate_path: evaluate
     geojson_path: gt_geojsons
