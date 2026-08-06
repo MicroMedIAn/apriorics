@@ -1,6 +1,6 @@
 import marimo
 
-__generated_with = "0.23.9"
+__generated_with = "0.23.8"
 app = marimo.App(width="medium")
 
 
@@ -41,27 +41,17 @@ def _(api, defaultdict, df, pl):
     for exp_name in df["Experiment"]:
         exp = api.get(workspace="apriorics", project_name="apriorics", experiment=exp_name)
         data["Experiment"].append(exp_name)
-        data["version"].append(exp.key)
         for param in ("p_pos", "model", "loss"):
             data[param].append(exp.get_parameters_summary(param)["valueCurrent"])
         for metric in ("AUROC", "AUPRC", "BinaryRecall", "BinaryPrecision", "DiceScore", "BinaryJaccardIndex"):
-            try:
-                data[metric].append(float(exp.get_metrics_summary(metric)["valueCurrent"]))
-            except ValueError:
-                data[metric].append(None)
+            data[metric].append(float(exp.get_metrics_summary(metric)["valueCurrent"]))
     res_df = pl.DataFrame(data).cast({"p_pos": float})
     return (res_df,)
 
 
 @app.cell
-def _(pl, res_df):
-    res_df.filter(
-        (pl.col("AUPRC") >= res_df["AUPRC"].top_k(3).to_numpy()[-1])
-        | (pl.col("BinaryRecall") >= res_df["BinaryRecall"].top_k(3).to_numpy()[-1])
-        | (pl.col("BinaryPrecision") >= res_df["BinaryPrecision"].top_k(3).to_numpy()[-1])
-        | (pl.col("DiceScore") >= res_df["DiceScore"].top_k(3).to_numpy()[-1])
-        | (pl.col("BinaryJaccardIndex") >= res_df["BinaryJaccardIndex"].top_k(3).to_numpy()[-1])
-    )
+def _(res_df):
+    res_df
     return
 
 

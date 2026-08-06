@@ -160,7 +160,6 @@ parser.add_argument(
 parser.add_argument("--classif_model")
 parser.add_argument("--classif_version")
 parser.add_argument("--flood_mask", action="store_true")
-parser.add_argument("--version")
 
 
 if __name__ == "__main__":
@@ -174,11 +173,8 @@ if __name__ == "__main__":
     maskfolder = args.maskfolder
     logfolder = args.trainfolder / "logs"
 
-    if args.version is not None:
-        version = args.version
-    else:
-        with open(args.hash_file, "r") as f:
-            version = yaml.safe_load(f)[args.fold]
+    with open(args.hash_file, "r") as f:
+        version = yaml.safe_load(f)[args.fold]
 
     patches_paths = get_files(
         patch_csv_folder, extensions=".csv", recurse=False
