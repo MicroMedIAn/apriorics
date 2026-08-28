@@ -45,9 +45,9 @@ stages:
     outs:
     - path: ../data/train/logs/apriorics
       hash: md5
-      md5: 36e10af3ee204f448556fed2061e24fe.dir
-      size: 59436291468
-      nfiles: 28
+      md5: ec94ee8e073432042a50c99e8317b025.dir
+      size: 108533356284
+      nfiles: 44
     - path: .model_hash.yaml
       hash: md5
       md5: cc45a2f116b0002dc49bf0abe6faaa47
