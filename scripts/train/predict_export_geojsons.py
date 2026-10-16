@@ -180,6 +180,8 @@ if __name__ == "__main__":
         with open(args.hash_file, "r") as f:
             version = yaml.safe_load(f)[args.fold]
 
+    print(f"Loaded version {version}.")
+
     patches_paths = get_files(
         patch_csv_folder, extensions=".csv", recurse=False
     ).sorted(key=lambda x: x.stem)

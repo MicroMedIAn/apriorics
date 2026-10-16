@@ -44,7 +44,11 @@ dependencies = [
     "marimo>=0.23.9",
     "seaborn>=0.13.2",
     "polars>=1.41.2",
+    "ruamel-yaml>=0.18",
 ]
+
+[project.scripts]
+dq = "apriorics.dq:main"
 
 [tool.uv.sources]
 torch = [
@@ -66,4 +70,3 @@ build-backend = "uv_build"
 
 [tool.marimo.runtime]
 output_max_bytes = 100_000_000
-
