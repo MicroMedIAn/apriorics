@@ -191,7 +191,7 @@ def convert_to_nifti(base_path: PathLike, path: PathLike, container=None):
     if container is None:
         client = docker.from_env()
         container = client.containers.create(
-            "historeg",
+            "ghcr.io/schwobr/historeg:latest",
             "/bin/bash",
             tty=True,
             stdin_open=True,
@@ -360,7 +360,7 @@ def register(
     if container is None:
         client = docker.from_env()
         container = client.containers.create(
-            "historeg",
+            "ghcr.io/schwobr/historeg:latest",
             "/bin/bash",
             tty=True,
             stdin_open=True,

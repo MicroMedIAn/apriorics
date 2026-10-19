@@ -6,8 +6,8 @@ stages:
       --data_path ../data --ihc_type ColIV --mapping_file 
       ../../../ihc_mapping.json --mask_extension .gpkg --remote_path 
       /media/AprioricsSlides --slide_extension .svs --binary_op none --dab_thr 
-      0.015 --iou_thr 0.05 --nuc_max_siz 40 --num_workers 30 --object_min_size 
-      50 --geojson_path gt_geojsons --log_path registration_geojsons 
+      0.015 --iou_thr 0.05 --nuc_max_siz 40 --num_workers 8 --object_min_size 50
+      --geojson_path gt_geojsons --log_path registration_geojsons 
       --main_slide_path slides --slide_path slides_tmp --mask_path gt_gpkgs 
       --tissue_path tissue_geojsons --ink_path ink_geojsons
     deps:
@@ -19,16 +19,28 @@ stages:
     outs:
     - path: ../data/gt_geojsons
       hash: md5
-      md5: 56850a932e6538e84f01a9bdc6f57c2e.dir
-      size: 40261488785
-      nfiles: 82
+      md5: 44c3c21e122ff9b2bd190c880a6dfc86.dir
+      size: 57480043118
+      nfiles: 250
     - path: ../data/gt_gpkgs
       hash: md5
-      md5: 7c7519702e671eac41224cac911b739e.dir
-      size: 33008885760
-      nfiles: 82
+      md5: 6c1e80aaf1739186068fc5f7d33679b2.dir
+      size: 47472750592
+      nfiles: 250
     - path: ../data/registration_geojsons
       hash: md5
-      md5: 3bf3192b1984ae94ced10a4dd7340547.dir
-      size: 399084
-      nfiles: 82
+      md5: b47dd292eb1f391a239aa7981ea54ad9.dir
+      size: 1244866
+      nfiles: 250
+  slide_download:
+    cmd: python ../../../scripts/utils/file_transfer.py --data_path ../data 
+      --ihc_type ColIV --mapping_file ../../../ihc_mapping.json --mask_extension
+      .gpkg --remote_path /media/AprioricsSlides --slide_extension .svs 
+      --add_tree --clean_previous --import_file ../../../file_lists/ColIV 
+      --import_ihc --extension .svs --rel_path slides --remote_rel_path .
+    outs:
+    - path: ../data/slides
+      hash: md5
+      md5: 4b5b109f21c577da2ca918753b07a8e9.dir
+      size: 772108727696
+      nfiles: 500

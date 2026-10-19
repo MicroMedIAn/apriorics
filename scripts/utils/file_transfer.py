@@ -59,22 +59,22 @@ if __name__ == "__main__":
         try:
             info = get_info_from_filename(file.stem, ihc_mapping)
         except ValueError:
-            ihc_type = None
+            ihc_types = None
             slide_type = "HE"
             for part in file.parts:
                 if part in ihc_mapping["HE"].keys():
-                    ihc_type = part
+                    ihc_types = [part]
                 elif part == "IHC":
                     slide_type = "IHC"
-            if ihc_type is None:
+            if ihc_types is None:
                 raise ValueError("IHC type info not found in file path.")
             info = {
-                "ihc_type": ihc_type,
+                "ihc_types": ihc_types,
                 "slide_type": slide_type,
                 "block": file.stem,
             }
         if not (
-            info["ihc_type"] == args.ihc_type
+            args.ihc_type in info["ihc_types"]
             and (info["slide_type"] == "HE" or args.import_ihc)
             and (slide_list is None or info["block"] in slide_list)
         ):
