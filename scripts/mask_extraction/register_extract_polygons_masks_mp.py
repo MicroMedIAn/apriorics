@@ -478,7 +478,7 @@ def main(args):
         gs = geopandas.GeoSeries(obj_polygons.geoms)
         if args.ink_path is not None:
             ink_gs = geopandas.read_file(
-               inkfolder 
+               inkfolder
                 / hefile.relative_to(slidefolder / "HE").with_suffix(".geojson")
             )["geometry"]
             gs = gs.loc[gs.disjoint(unary_union(ink_gs.values))]
@@ -490,7 +490,7 @@ def main(args):
 
     client = docker.from_env()
     client.containers.run(
-        "historeg",
+        "ghcr.io/schwobr/historeg:latest",
         f"rm -rf /data/{tmpfolder.name}",
         volumes=[f"{tmpfolder.parent.absolute()}:/data"],
     )
