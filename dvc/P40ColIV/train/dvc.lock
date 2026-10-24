@@ -84,11 +84,11 @@ stages:
       ../data --ihc_type P40ColIV --mapping_file ../../../ihc_mapping.json 
       --mask_extension .gpkg --remote_path /media/AprioricsSlides --seed 42 
       --slide_extension .svs --split_file ../../../splits.csv --batch_size 32 
-      --epochs 5 --fold 0 --gpu 1 --level 0 --loss sum_bce_0.5_dice_0.5 --lr 
+      --epochs 1 --fold 0 --gpu 1 --level 0 --loss sum_bce_0.5_dice_0.5 --lr 
       0.0001 --model dpt/tu-hf-hub:paige-ai/Virchow2 --num_workers 32 
       --patch_size 224 --scheduler one-cycle --wd 0.01 --p_pos 0.8 --transforms 
-      hovernet --freeze_encoder --area_threshold 100 --iou_threshold 0.5 
-      --test_fold test
+      hovernet --area_threshold 100 --iou_threshold 0.5 --test_fold test 
+      --version 29f239dc376847618efe49d4d11e7938
     deps:
     - path: ../data/train/224_0/patch_csvs
       hash: md5
@@ -97,19 +97,19 @@ stages:
       nfiles: 353
     - path: ../data/train/logs/apriorics
       hash: md5
-      md5: 36e10af3ee204f448556fed2061e24fe.dir
-      size: 59436291468
-      nfiles: 28
+      md5: ec94ee8e073432042a50c99e8317b025.dir
+      size: 108533356284
+      nfiles: 44
     - path: .model_hash.yaml
       hash: md5
-      md5: d6e41f62f494b40aa9d6dde4b16673c0
+      md5: cc45a2f116b0002dc49bf0abe6faaa47
       size: 38
     outs:
     - path: ../data/evaluate/
       hash: md5
-      md5: 0284947f2f19a86010b8d1fb60fd6389.dir
-      size: 8319055249
-      nfiles: 1578
+      md5: 4eb0789986efcbe43a3a45ea0c86928b.dir
+      size: 10329873426
+      nfiles: 1835
   get_fp_fn_geojsons:
     cmd: python ../../../scripts/train/get_fp_fn_geojsons.py --hash_file 
       .model_hash.yaml --done_file .fp_fn_done.yaml --evalfolder 
