@@ -88,7 +88,7 @@ stages:
       0.0001 --model dpt/tu-hf-hub:paige-ai/Virchow2 --num_workers 32 
       --patch_size 224 --scheduler one-cycle --wd 0.01 --p_pos 0.8 --transforms 
       hovernet --area_threshold 100 --iou_threshold 0.5 --test_fold test 
-      --version 29f239dc376847618efe49d4d11e7938
+      --version 4e3b39ff30b44f8695f7bb4ebf112ced
     deps:
     - path: ../data/train/224_0/patch_csvs
       hash: md5
@@ -107,9 +107,9 @@ stages:
     outs:
     - path: ../data/evaluate/
       hash: md5
-      md5: 4eb0789986efcbe43a3a45ea0c86928b.dir
-      size: 10329873426
-      nfiles: 1835
+      md5: 7a290a723b577370d3f359c0fa780518.dir
+      size: 21053055876
+      nfiles: 2092
   get_fp_fn_geojsons:
     cmd: python ../../../scripts/train/get_fp_fn_geojsons.py --hash_file 
       .model_hash.yaml --done_file .fp_fn_done.yaml --evalfolder 
