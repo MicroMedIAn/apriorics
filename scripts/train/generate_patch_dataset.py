@@ -89,11 +89,13 @@ parser.add_argument(
     help="Specify to save geojson representation of patch extractions. Optional.",
 )
 parser.add_argument("--regfolder", type=Path)
+parser.add_argument("--no_apriorics", action="store_true")
 
 if __name__ == "__main__":
     args = parser.parse_known_args()[0]
+    slidefolder = args.slidefolder if args.no_apriorics else args.slide_folder/"HE"
     input_files = get_files(
-        args.slidefolder / "HE",
+        slidefolder,
         extensions=args.slide_extension,
         recurse=args.recurse,
     )
@@ -118,7 +120,7 @@ if __name__ == "__main__":
 
         if args.maskfolder is not None:
             mask_path = args.maskfolder / in_file_path.relative_to(
-                args.slidefolder / "HE"
+                slidefolder
             ).with_suffix(".gpkg")
             if not mask_path.exists():
                 return

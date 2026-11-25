@@ -39,23 +39,18 @@ slide_download:
   import_file: ../../../file_lists/CD3CD20
   import_ihc: false
 train:
-  augment_stain: true
-  batch_size: 64
-  data_step: 1
+  batch_size: 32
   data_type: segmentation
   epochs: 5
   fold: 0
   gpu: 0
   level: 0
-  loss: sum_bce_0.5_dice_0.5
+  loss: wbce_10
   lr: 1e-4
-  model: manet/mit_b2
+  model: dpt/tu-hf-hub:paige-ai/Virchow2
   num_workers: 32
-  p_augment: 0.8
-  p_pos: 0.8
+  p_pos: 0.9
   patch_size: 224
   scheduler: one-cycle
-  transforms: base
+  transforms: hovernet
   wd: 0.1
-  group_norm: true
-  freeze_encoder: false 

@@ -322,13 +322,18 @@ if __name__ == "__main__":
     else:
         encoder_name = None
 
-    if encoder_name is not None and "Virchow2" in encoder_name:
-        kwargs = {
-            "encoder_weights": "virchow_v2",
-            "mlp_layer": SwiGLUPacked,
-            "act_layer": torch.nn.SiLU,
-            "output_size": args.patch_size,
-        }
+    if encoder_name is not None:
+        if "Virchow2" in encoder_name:
+            kwargs = {
+                "encoder_weights": "virchow_v2",
+                "mlp_layer": SwiGLUPacked,
+                "act_layer": torch.nn.SiLU,
+                "output_size": args.patch_size,
+            }
+        elif "CONCH" in encoder_name:
+            kwargs = {
+                "encoder_weights": ""
+            }
     else:
         kwargs = {"encoder_weights": "imagenet"}
     kwargs |= {

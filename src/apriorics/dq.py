@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-dq — queue `dvc repro` runs with per-run parameter overrides.
+dq — queue `dvc repro` runs with per-run parameter overrides and stage targets.
 
 No git refs, no experiments, no checkout, no restore: jobs run one after
 another in the current workspace on the current branch. Each job applies
@@ -9,6 +9,12 @@ across the queue) and runs `dvc repro` in place.
 
 With --commit, every run is recorded as a git commit of dvc.lock plus the
 params files it touched — git history becomes your run log.
+
+Examples:
+  dq add -n baseline                      # full pipeline, current params
+  dq add -S train.lr=0.01 train           # only the `train` stage
+  dq sweep -f -s -S train.lr=0.1,0.5 train
+  dq run --commit
 
 Override syntax (-S, repeatable):
   key=value                  nested keys via dots:  train.lr=0.01
@@ -92,6 +98,9 @@ def load_queue() -> dict:
         return {"version": 2, "jobs": []}
     q = json.loads(QUEUE.read_text())
     q.setdefault("jobs", [])
+    for j in q["jobs"]:
+        j.setdefault("stages", [])
+        j.setdefault("repro_flags", [])
     return q
 
 def save_queue(q: dict) -> None:
@@ -256,8 +265,17 @@ def git_commit() -> str | None:
     r = _git("rev-parse", "--short", "HEAD")
     return r.stdout.strip() or None
 
+def _job_label(job: dict) -> str:
+    if job.get("name"):
+        return job["name"]
+    parts = []
+    if job.get("stages"):
+        parts.append(",".join(job["stages"]))
+    parts += [fmt_override(o) for o in job["overrides"]]
+    return ", ".join(parts) or "baseline"
+
 def _commit_message(job: dict, rc, repro_cmd: list) -> tuple:
-    label = job["name"] or ", ".join(fmt_override(o) for o in job["overrides"]) or "baseline"
+    label = _job_label(job)
     if len(label) > 48:
         label = label[:45] + "..."
     subject = f"dq: {label}"
@@ -302,11 +320,13 @@ def _params_diff() -> None:
     except Exception:
         pass
 
-def _new_job(name, overrides: list) -> dict:
+def _new_job(name, overrides: list, stages=None, repro_flags=None) -> dict:
     return {
         "id": uuid.uuid4().hex[:8],
         "name": name,
         "overrides": overrides,
+        "stages": list(stages or []),
+        "repro_flags": list(repro_flags or []),
         "status": "pending",
         "queued_at": now(),
         "started_at": None,
@@ -316,7 +336,13 @@ def _new_job(name, overrides: list) -> dict:
         "commit": None,
     }
 
+def _job_repro_cmd(job: dict, ra: list) -> list:
+    return ["dvc", "repro", *ra, *job.get("repro_flags", []), *job.get("stages", [])]
+
 # --- commands -------------------------------------------------------------------
+def _repro_flags(args) -> list:
+    return (["-f"] if args.force else []) + (["-s"] if args.single_item else [])
+
 def cmd_add(args) -> None:
     lp = lock()
     try:
@@ -326,11 +352,14 @@ def cmd_add(args) -> None:
         overrides = []
         for tok in args.set_param:
             overrides.extend(parse_override(tok))
-        job = _new_job(args.name, overrides)
+        job = _new_job(args.name, overrides,
+                       stages=list(args.stage), repro_flags=_repro_flags(args))
         q["jobs"].append(job)
         save_queue(q)
+        tgt = f" [{','.join(job['stages'])}]" if job["stages"] else ""
         ovs = " ".join(fmt_override(o) for o in overrides) or "(no overrides)"
-        print(f"dq: queued {job['id']}" + (f" ({job['name']})" if job["name"] else "") + f": {ovs}")
+        print(f"dq: queued {job['id']}" + (f" ({job['name']})" if job["name"] else "")
+              + tgt + f": {ovs}")
     finally:
         unlock(lp)
 
@@ -362,17 +391,22 @@ def cmd_sweep(args) -> None:
             total *= len(vals)
         if total > args.max_jobs:
             sys.exit(f"dq: error: sweep would create {total} jobs (max {args.max_jobs})")
+        stages = list(args.stage)
+        flags = _repro_flags(args)
+        tgt_prefix = ",".join(stages) + ":" if stages else ""
         for combo in itertools.product(*(vals for _, _, vals in dims)):
             overrides = [{"file": f, "op": "set", "key": k, "value": v}
                          for (f, k, _), v in zip(dims, combo)]
-            name = ",".join(f"{k}={_valstr(v)}" for (_, k, _), v in zip(dims, combo))
+            name = tgt_prefix + ",".join(f"{k}={_valstr(v)}"
+                                         for (_, k, _), v in zip(dims, combo))
             base, i = name, 2
             while any(j.get("name") == name for j in q["jobs"]):
                 name = f"{base}#{i}"
                 i += 1
-            q["jobs"].append(_new_job(name, overrides))
+            q["jobs"].append(_new_job(name, overrides, stages=stages, repro_flags=flags))
         save_queue(q)
-        print(f"dq: queued {total} jobs")
+        print(f"dq: queued {total} jobs"
+              + (f" -> dvc repro {' '.join(flags)} {','.join(stages)}" if (flags or stages) else ""))
     finally:
         unlock(lp)
 
@@ -387,7 +421,8 @@ def _dry(pending: list) -> None:
         return mem[rel]
 
     for job in pending:
-        print(f"\n=== [{job['id']}] {job['name'] or '(unnamed)'}")
+        tgt = f" [{','.join(job['stages'])}]" if job.get("stages") else ""
+        print(f"\n=== [{job['id']}] {_job_label(job) or '(unnamed)'}{tgt}")
         if not job["overrides"]:
             print("    (no overrides)")
             continue
@@ -410,14 +445,16 @@ def _dry(pending: list) -> None:
             print(f"    would fail: {e}", file=sys.stderr)
     print("\ndq: dry run — nothing was written; jobs stay pending")
 
-def _run_one(job: dict, args, q: dict, repro_cmd: list) -> None:
+def _run_one(job: dict, args, q: dict, ra: list) -> None:
+    repro_cmd = _job_repro_cmd(job, ra)
     job["status"] = "running"
     job["started_at"] = now()
     save_queue(q)
 
-    print(f"\n=== [{job['id']}] {job['name'] or '(unnamed)'}")
+    print(f"\n=== [{job['id']}] {_job_label(job) or '(unnamed)'}")
     for ov in job["overrides"]:
         print(f"    {fmt_override(ov)}")
+    print(f"    $ {' '.join(repro_cmd)}")
 
     rc, err, sha = None, None, None
     try:
@@ -453,7 +490,6 @@ def cmd_run(args) -> None:
     ra = list(args.repro_args or [])
     if ra and ra[0] == "--":
         ra = ra[1:]
-    repro_cmd = ["dvc", "repro", *ra]
 
     lp = lock()
     try:
@@ -474,7 +510,7 @@ def cmd_run(args) -> None:
 
         try:
             for job in pending:
-                _run_one(job, args, q, repro_cmd)
+                _run_one(job, args, q, ra)
                 if job["status"] == "failed" and not args.keep_going:
                     print("dq: stopping on failure; remaining jobs stay pending "
                           "(--keep-going to override)", file=sys.stderr)
@@ -500,10 +536,11 @@ def cmd_ls(args) -> None:
         return
     for j in q["jobs"]:
         ovs = " ".join(fmt_override(o) for o in j["overrides"]) or "(no overrides)"
+        tgt = f"[{','.join(j.get('stages', []))}] " if j.get("stages") else ""
         name = j["name"] or "-"
         rc = "-" if j.get("returncode") is None else str(j["returncode"])
         sha = j.get("commit") or "-"
-        print(f"{j['status']:>8}  {j['id']}  {name:<24} rc={rc:>3}  {sha:<8} {ovs}")
+        print(f"{j['status']:>8}  {j['id']}  {name:<24} rc={rc:>3}  {sha:<8} {tgt}{ovs}")
         if j.get("error"):
             print(f"{'':>8}  error: {j['error']}")
 
@@ -534,24 +571,40 @@ def cmd_clear(args) -> None:
 def main(argv=None) -> None:
     ap = argparse.ArgumentParser(
         prog="dq",
-        description="Queue `dvc repro` runs with per-run parameter overrides — "
-                    "no git refs, no checkout, no restore. Overrides compound "
-                    "across the queue; the workspace just moves forward.",
+        description="Queue `dvc repro` runs with per-run parameter overrides and "
+                    "optional stage targets — no git refs, no checkout, no restore. "
+                    "Overrides compound across the queue; the workspace just moves forward.",
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
     sub = ap.add_subparsers(dest="cmd", required=True)
+
+    for name, help_ in (("add", "queue one job"), ("sweep", "queue the cartesian "
+                                                          "product of comma-separated values")):
+        pass
 
     p = sub.add_parser("add", help="queue one job")
     p.add_argument("-S", "--set-param", action="append", default=[], metavar="OVR",
                    help="e.g. train.lr=0.01 or configs/model.yaml:depth=8 (repeatable)")
     p.add_argument("-n", "--name", help="job name (used in the commit message)")
+    p.add_argument("-f", "--force", action="store_true",
+                   help="pass -f to dvc repro (re-run even if the stage is unchanged)")
+    p.add_argument("-s", "--single-item", action="store_true",
+                   help="pass -s to dvc repro (don't re-run downstream stages)")
+    p.add_argument("stage", nargs="*", metavar="STAGE",
+                   help="dvc repro target(s); omit for the whole pipeline")
     p.set_defaults(fn=cmd_add)
 
     p = sub.add_parser("sweep", help="queue the cartesian product of comma-separated values")
     p.add_argument("-S", "--set-param", action="append", default=[], metavar="OVR",
                    help="key=v1,v2,... — bare commas are alternatives; bracketed lists "
                         "are single values, e.g. -S layers='[64,128]'")
+    p.add_argument("-f", "--force", action="store_true",
+                   help="pass -f to dvc repro (re-run even if the stage is unchanged)")
+    p.add_argument("-s", "--single-item", action="store_true",
+                   help="pass -s to dvc repro (don't re-run downstream stages)")
     p.add_argument("--max-jobs", type=int, default=200)
+    p.add_argument("stage", nargs="*", metavar="STAGE",
+                   help="dvc repro target(s) for every queued job; omit for the whole pipeline")
     p.set_defaults(fn=cmd_sweep)
 
     p = sub.add_parser("run", help="run all pending jobs sequentially")
@@ -569,7 +622,8 @@ def main(argv=None) -> None:
     p.add_argument("--no-diff", action="store_true",
                    help="skip the `dvc params diff` printout before each repro")
     p.add_argument("repro_args", nargs=argparse.REMAINDER, metavar="-- ARGS",
-                   help="extra args for dvc repro, e.g.: dq run -- -v")
+                   help="extra args for every dvc repro, e.g.: dq run -- -v "
+                        "(per-job stage/flags come from `dq add`/`dq sweep`)")
     p.set_defaults(fn=cmd_run)
 
     p = sub.add_parser("ls", help="list jobs (with commit shas once run)")

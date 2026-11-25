@@ -9,8 +9,11 @@ def _():
     import pandas as pd
     from shutil import copyfile
     from pathlib import Path
+    import torch
+    from pathaia.util.types import Slide, Patch
+    import numpy as np
 
-    return Path, copyfile, pd
+    return Path, Slide, copyfile, np, pd, torch
 
 
 @app.cell
@@ -35,6 +38,27 @@ def _(Path, copyfile, file_list):
         out_fp = Path("/data_fast/anapath/prima_code/slides/") / fp.name
         if not out_fp.exists():
             copyfile(fp, out_fp)
+    return
+
+
+@app.cell
+def _(Slide):
+    slide = Slide("/data_fast/anapath/prima_code/slides/HE/23F000436-1-01-3_122229.svs")
+    h, w = slide.dimensions
+    t_h = int(1000 * min(1, h/w))
+    t_w = int(1000 * min(1, w/h))
+    return t_h, t_w
+
+
+@app.cell
+def _(np, t_h, t_w):
+    mask = np.zeros((t_h, t_w))
+    return
+
+
+@app.cell
+def _(torch):
+    coords = torch.load("/data_fast/anapath/prima_code/virchow_tiles/0/23F000436/coords.pt")
     return
 
 

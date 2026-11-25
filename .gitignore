@@ -147,3 +147,5 @@ data/
 __marimo__/
 
 .envrc
+
+.dq/

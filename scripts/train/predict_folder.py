@@ -11,13 +11,13 @@ from lightning_fabric.utilities.seed import seed_everything
 from pathaia.util.paths import get_files
 from shapely.geometry import MultiPolygon, Polygon
 from shapely.ops import unary_union
-from timm import create_model
+from segmentation_models_pytorch import create_model
+from timm.layers import SwiGLUPacked
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 
 from apriorics.data import TestDataset
 from apriorics.masks import flood_full_mask
-from apriorics.model_components.normalization import group_norm
 from apriorics.plmodules import BasicClassificationModule, BasicSegmentationModule
 from apriorics.polygons import mask_to_polygons_layer
 from apriorics.transforms import ToTensor
@@ -159,7 +159,7 @@ if __name__ == "__main__":
 
     seed_everything(seed=args.seed, workers=True)
 
-    trainfolder = args.trainfolder / args.ihc_type
+    trainfolder = args.trainfolder
     patch_csv_folder = args.outfolder / f"{args.base_size}_{args.level}/patch_csvs"
     slidefolder = args.slidefolder
     logfolder = args.trainfolder / "logs"
@@ -199,13 +199,9 @@ if __name__ == "__main__":
         kwargs = {"encoder_weights": "imagenet"}
     kwargs |= {
         "classes": 1,
-        # "norm_layer": group_norm if args.group_norm else torch.nn.BatchNorm2d,
+        "encoder_name": encoder_name,
+        "img_size": args.patch_size,
     }
-    if "classification" not in args.data_type:
-        kwargs |= {
-            "encoder_name": encoder_name,
-            "img_size": args.patch_size,
-        }
     model = create_model(model[0], **kwargs).eval()
     model.requires_grad_(False)
 
@@ -219,7 +215,7 @@ if __name__ == "__main__":
     ).to(device)
 
     ckpt_path = logfolder / f"apriorics/{version}/checkpoints/last.ckpt"
-    checkpoint = torch.load(ckpt_path)
+    checkpoint = torch.load(ckpt_path, weights_only=False)
     missing, unexpected = model.load_state_dict(checkpoint["state_dict"], strict=False)
 
     if args.classif_model is not None and args.classif_version is not None:
